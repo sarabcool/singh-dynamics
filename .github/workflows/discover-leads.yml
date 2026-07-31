@@ -1,0 +1,87 @@
+name: discover-leads
+
+# Triggered three ways:
+#   1. repository_dispatch from the Worker's 03:00 ET cron. Primary path.
+#   2. schedule, as a fallback if the Worker is down. Belt and braces, and the
+#      cost of a duplicate run is a few cents.
+#   3. workflow_dispatch, so it can be run by hand while debugging.
+on:
+  repository_dispatch:
+    types: [discover-leads]
+  schedule:
+    - cron: '30 7 * * *'   # 03:30 ET, 30 min after the Worker's attempt
+  workflow_dispatch:
+    inputs:
+      max_leads:
+        description: 'How many leads to enrich this run'
+        default: '15'
+
+# Never let two enrichment runs write the same configs at once.
+concurrency:
+  group: discover-leads
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install
+        working-directory: agent
+        run: npm ci --omit=dev
+
+      - name: Enrich and score
+        id: enrich
+        working-directory: .
+        env:
+          ANTHROPIC_API_KEY:      ${{ secrets.ANTHROPIC_API_KEY }}
+          CLOUDFLARE_API_TOKEN:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID:  ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:         ${{ secrets.D1_DATABASE_ID }}
+          MAX_LEADS:              ${{ github.event.inputs.max_leads || '15' }}
+          MAX_COST_CENTS:         '150'
+          GITHUB_RUN_URL:         ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node agent/discover.mjs
+
+      - name: Validate generated site configs
+        run: python3 sites/build.py --check
+        continue-on-error: true   # TODO markers are expected on fresh configs
+
+      # A PR rather than a direct push, deliberately. Generated configs get
+      # eyes on them before they can become a real business's website, and the
+      # diff is the review surface. This is the reversibility guarantee that
+      # makes the whole job safe to run unattended.
+      - name: Open PR with new configs
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/lead-enrichment
+          base: main
+          commit-message: |
+            enrich ${{ steps.enrich.outputs.enriched }} leads
+
+            Automated run. Scores and contact details written to D1,
+            site configs drafted for leads scoring 70+.
+          title: 'Lead enrichment: ${{ steps.enrich.outputs.enriched }} leads'
+          body: |
+            Automated nightly enrichment.
+
+            - Leads enriched: **${{ steps.enrich.outputs.enriched }}**
+            - API cost: **${{ steps.enrich.outputs.cost_cents }} cents**
+            - [Run log](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Any site config added here is a **draft**. Nothing has been sent to
+            anyone and no site is live. Check that phone numbers and review
+            quotes are real before merging.
+          labels: automated, needs-review
+          delete-branch: true

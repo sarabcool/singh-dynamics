@@ -1,0 +1,41 @@
+{
+  "_comment": "REAL LEAD, INCOMPLETE DATA. Brighton MI, top HIGH-priority row on the M0 shop list: no website, no phone listed on the Maps pin, 10 reviews. Every TODO below must be replaced with something Sarab confirmed from the listing or from the owner. Do not ship this file as-is. The builder will warn on every TODO.",
+
+  "slug": "2wheelmax",
+  "name": "2wheelmax",
+  "city": "Brighton",
+  "state": "MI",
+  "phone": "TODO - not published on the Maps pin. Get it from the owner or the Facebook page. Without a phone number this whole page has no conversion path.",
+
+  "domain": "",
+  "theme": "pine",
+  "schema_type": "MotorcycleRepair",
+
+  "tagline": "Motorcycle Repair",
+  "headline": "TODO - ask the owner one question: what do people bring you most?",
+  "subhead": "TODO - one sentence, in his words, on why people come back.",
+
+  "service_area": ["Brighton", "Howell", "Hartland", "Whitmore Lake", "South Lyon"],
+
+  "services": [
+    { "name": "TODO - confirm with owner", "desc": "" },
+    { "name": "TODO - confirm with owner", "desc": "" },
+    { "name": "TODO - confirm with owner", "desc": "" }
+  ],
+
+  "about": "TODO - three sentences from the conversation. This is the section that separates this from a Wix template, so it is worth the ten minutes of asking.",
+
+  "hours": {},
+  "address": { "street": "TODO - not on the pin", "zip": "" },
+  "maps_url": "TODO - paste the Google Maps link from the M0 shop list",
+
+  "reviews": [
+    {
+      "text": "TODO - copy two real reviews verbatim off the Google listing. Do not paraphrase and do not write them.",
+      "author": "Google",
+      "stars": 5
+    }
+  ],
+
+  "aggregate_rating": { "enabled": false, "value": "", "count": "10" }
+}

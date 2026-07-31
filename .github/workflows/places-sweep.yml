@@ -1,0 +1,58 @@
+name: places-sweep
+
+# Weekly, not nightly. Deliberate.
+#
+# Text Search is ~$32/1,000 calls. Forty calls a night is roughly $38/month for
+# a dataset that barely changes: there are a few hundred small powersports shops
+# in Michigan and new ones appear a handful of times a year. Weekly costs about
+# $5/month and loses nothing.
+#
+# This lives on the Actions scheduler rather than a Worker cron because the free
+# Workers plan allows only three triggers and those are better spent on jobs
+# that run daily or hourly. Actions cron is free and unmetered.
+on:
+  schedule:
+    - cron: '0 7 * * 0'     # Sunday 03:00 ET
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Sweep every town, not just the core eight. Use once.'
+        type: boolean
+        default: false
+      max_searches:
+        description: 'Hard ceiling on billable Text Search calls'
+        default: '40'
+
+concurrency:
+  group: places-sweep
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sweep Google Places
+        env:
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+          MAX_SEARCHES:          ${{ github.event.inputs.max_searches || '40' }}
+          GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node agent/sweep.mjs ${{ github.event.inputs.full == 'true' && '--full' || '' }}
+
+# No PR step here on purpose. This job only inserts unscored rows into D1 and
+# writes no files, so there is nothing to review. The reasoning pass in
+# discover-leads.yml is what produces reviewable output.

@@ -1,0 +1,82 @@
+{
+  "_comment": "Copy this to <slug>.json and fill it in. Files starting with _ are skipped by the builder. Every field marked REQUIRED must be real data pulled from the shop's Google Maps listing or a conversation with the owner. Never invent a phone number, address, or review.",
+
+  "slug": "REQUIRED - url-safe folder name, lowercase, no spaces",
+  "name": "REQUIRED - exact business name as it appears on Google Maps",
+  "city": "REQUIRED",
+  "state": "REQUIRED - two letters",
+  "phone": "REQUIRED - any format, the builder normalizes it",
+
+  "domain": "example.com - leave empty until the domain is bought. Omitting it drops canonical, og:url, sitemap and robots.",
+  "theme": "steel | pine | clay | ice - vary this between shops in the same town so they do not look like the same template",
+  "schema_type": "AutoRepair | MotorcycleRepair | Store | LocalBusiness - see schema.org, AutoRepair is the safe default for a service shop",
+
+  "headline": "The h1. Say what they do and where, in the owner's words if you have them. Not a slogan.",
+  "subhead": "One sentence under the h1. Who they serve and what makes them different.",
+  "tagline": "Short descriptor used in the page title, e.g. 'Motorcycle & ATV Repair'",
+  "trade": "repair",
+
+  "seo_title": "Optional override. Leave out and the builder composes name + tagline + city.",
+  "seo_description": "Optional override, keep under 155 characters.",
+
+  "established": "2009",
+  "price_range": "$$",
+  "badges": [
+    "Short trust signals, 2 to 4 max",
+    "Family owned",
+    "Free estimates"
+  ],
+
+  "service_area": ["Nearby town", "Another town", "A third town"],
+
+  "services": [
+    {
+      "name": "REQUIRED - at least 3 services or the page looks thin",
+      "desc": "One or two plain sentences. What it is, who it is for."
+    }
+  ],
+
+  "about_heading": "Optional override",
+  "about": "Two or three short paragraphs separated by a blank line.\n\nWrite it the way the owner talks. Specific beats polished. 'Been turning wrenches on sleds since high school' outperforms 'committed to excellence' every single time.",
+
+  "highlights": {
+    "Small shop, direct answers": "You talk to the person doing the work.",
+    "Straight pricing": "You get the number before we start."
+  },
+
+  "hours": {
+    "monday": ["09:00", "18:00"],
+    "tuesday": ["09:00", "18:00"],
+    "wednesday": ["09:00", "18:00"],
+    "thursday": ["09:00", "18:00"],
+    "friday": ["09:00", "18:00"],
+    "saturday": ["10:00", "15:00"],
+    "sunday": "closed"
+  },
+  "hours_note": "Optional line under the table, e.g. seasonal hours.",
+
+  "address": {
+    "street": "Leave empty if unknown. A street address is the single biggest local SEO factor.",
+    "zip": ""
+  },
+  "geo": { "lat": 0.0, "lng": 0.0 },
+  "maps_url": "Paste the shop's Google Maps link. Powers the directions buttons and hasMap schema.",
+
+  "reviews": [
+    {
+      "text": "Quote a real Google review verbatim. Do not edit it, do not write one.",
+      "author": "First name L., Google",
+      "stars": 5
+    }
+  ],
+
+  "aggregate_rating": {
+    "_warning": "Leave enabled false. Marking up Google's review scores as your own structured data violates Google's guidelines and can earn a manual action. value and count are still used for the on-page trust chip, which is fine.",
+    "enabled": false,
+    "value": "4.9",
+    "count": "10"
+  },
+
+  "cta_heading": "Optional override for the closing section",
+  "cta_text": "Optional override"
+}

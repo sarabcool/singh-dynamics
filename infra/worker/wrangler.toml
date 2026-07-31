@@ -1,0 +1,33 @@
+name = "singh-dynamics"
+main = "index.js"
+compatibility_date = "2026-07-30"
+
+# Free plan allows 3 cron triggers, which is exactly what we use. Do not add a
+# fourth without upgrading to Workers Paid ($5/mo, allows 5).
+#
+# The weekly Google Places sweep deliberately lives on GitHub Actions' own
+# schedule instead of here. Actions cron is free and unmetered, so spending one
+# of three scarce Worker triggers on a once-a-week job would be wasteful. See
+# .github/workflows/places-sweep.yml.
+#
+# Times are UTC. Michigan is UTC-4 in summer, UTC-5 in winter, so these drift by
+# an hour across DST. Acceptable for a nightly batch, not worth fixing.
+[triggers]
+crons = [
+  "0 7 * * *",    # 03:00 ET, nightly enrichment of unscored leads
+  "0 12 * * *",   # 08:00 ET, build the daily approval digest
+  "15 * * * *",   # hourly, uptime sweep of live client sites
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "singh-dynamics"
+database_id = "231279c0-6589-47a3-a3cc-ae7ba8713670"   # created 31 Jul 2026, ENAM
+
+[vars]
+GITHUB_REPO = "sarabcool/singh-dynamics"
+
+# Secrets, set with `wrangler secret put <NAME>`. Never in this file.
+#   GITHUB_TOKEN    fine-grained PAT, Contents read/write on this repo only
+#   OPERATOR_TOKEN  random 32+ chars, guards /digest /approve /trigger
+#   RESEND_API_KEY  sending only

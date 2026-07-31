@@ -1,0 +1,98 @@
+{
+  "_comment": "FICTIONAL demo shop. Exists only to show what the generator produces with a fully filled config. Not a real business. Nothing here should be sent to anyone.",
+
+  "slug": "demo-shop",
+  "name": "Redline Powersports Service",
+  "city": "Howell",
+  "state": "MI",
+  "phone": "(810) 555-0142",
+  "domain": "redlinepowersports.example",
+  "theme": "steel",
+  "schema_type": "MotorcycleRepair",
+
+  "tagline": "Motorcycle, ATV & Snowmobile Repair",
+  "headline": "Motorcycle, ATV and sled repair in Howell.",
+  "subhead": "Two bays, one mechanic, no service writer in between. You talk to the guy doing the work on your machine.",
+
+  "established": "2011",
+  "price_range": "$$",
+  "badges": ["Family owned", "Free estimates", "Most repairs in 3-5 days"],
+
+  "service_area": ["Howell", "Brighton", "Fowlerville", "Pinckney", "Hartland"],
+
+  "services": [
+    {
+      "name": "Engine & drivetrain repair",
+      "desc": "Top-end rebuilds, clutch and belt work, transmission diagnosis. Two- and four-stroke."
+    },
+    {
+      "name": "Snowmobile service",
+      "desc": "Pre-season inspections, track and suspension work, carb and clutch tuning. Book by October and skip the January queue."
+    },
+    {
+      "name": "ATV & side-by-side",
+      "desc": "CV axles, differentials, winches, electrical gremlins. Utility and sport machines."
+    },
+    {
+      "name": "Tires & wheels",
+      "desc": "Mount and balance, tubes, valve stems, bead sealing. Bring the wheel in or the whole bike."
+    },
+    {
+      "name": "Diagnostics",
+      "desc": "Runs rough, will not start, dies under load. Flat diagnostic fee applied to the repair if you go ahead."
+    },
+    {
+      "name": "Seasonal storage prep",
+      "desc": "Fuel stabilizing, fogging, battery tending, fluid changes. Done right so spring is a non-event."
+    }
+  ],
+
+  "about": "Redline started in a two-bay pole barn off Grand River in 2011 and has not gotten much bigger since, which is on purpose. Every machine that comes in gets worked on by the same person who quoted it.\n\nWe are not a dealership. We do not sell you a new sled when yours needs a clutch. Most of what rolls through here is between eight and twenty years old and worth keeping running.\n\nIf you want to know what something costs before we touch it, ask. You will get a real number, not a range.",
+
+  "highlights": {
+    "You talk to the mechanic": "No service advisor, no phone tree, no callback that never comes.",
+    "Straight pricing": "Quote before the work starts. If it changes, you hear about it first.",
+    "Older machines welcome": "We keep 15-year-old sleds running instead of telling you to replace them."
+  },
+
+  "hours": {
+    "monday": ["09:00", "18:00"],
+    "tuesday": ["09:00", "18:00"],
+    "wednesday": ["09:00", "18:00"],
+    "thursday": ["09:00", "18:00"],
+    "friday": ["09:00", "17:00"],
+    "saturday": ["09:00", "14:00"],
+    "sunday": "closed"
+  },
+  "hours_note": "November through February we usually stay open later on weeknights. Call and ask.",
+
+  "address": { "street": "4820 Grand River Ave", "zip": "48843" },
+  "geo": { "lat": 42.6073, "lng": -83.9294 },
+
+  "reviews": [
+    {
+      "text": "Took my Renegade to two other places and nobody could figure out why it kept bogging. He had it diagnosed in an afternoon and charged me less than the diagnostic fee at the dealer.",
+      "author": "Derek M., Google",
+      "stars": 5
+    },
+    {
+      "text": "Honest and affordable. Told me my clutch had another season in it instead of just replacing it. That is rare.",
+      "author": "Janine P., Google",
+      "stars": 5
+    },
+    {
+      "text": "Fixed my kid's quad the same week. Quoted me on the phone and the final bill matched exactly.",
+      "author": "Tom R., Google",
+      "stars": 5
+    }
+  ],
+
+  "aggregate_rating": {
+    "enabled": false,
+    "value": "4.9",
+    "count": "34"
+  },
+
+  "cta_heading": "Call the shop",
+  "cta_text": "Fastest way to get a real quote. If nobody picks up we are under a machine, leave a message and you will get a call back same day."
+}

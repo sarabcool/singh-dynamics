@@ -1,0 +1,16 @@
+{
+  "name": "singh-dynamics-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent SDK harnesses invoked by GitHub Actions. No human present when these run.",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0"
+  },
+  "scripts": {
+    "discover": "node ../agent/discover.mjs"
+  }
+}
