@@ -11,9 +11,12 @@ name: places-sweep
 # Workers plan allows only three triggers and those are better spent on jobs
 # that run daily or hourly. Actions cron is free and unmetered.
 on:
+  repository_dispatch:
+    types: [places-sweep]
   schedule:
-    - cron: '0 7 * * 0'     # Sunday 03:00 ET
+    - cron: '0 7 * * 0'
   workflow_dispatch:
+    ...
     inputs:
       full:
         description: 'Sweep every town, not just the core eight. Use once.'
