@@ -1,0 +1,66 @@
+name: execute-approved
+
+# The only workflow in this repo that contacts a stranger.
+#
+# Dispatched by the Worker when POST /approve flips rows to 'approved'. There is
+# NO schedule trigger and there must never be one. This job runs when a human
+# approves something, full stop. A cron here would turn a human-gated system
+# into an autonomous cold-email sender overnight.
+on:
+  repository_dispatch:
+    types: [execute-approved]
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: 'JSON array of approval_queue ids, e.g. [12,13]'
+        required: true
+      dry_run:
+        description: 'Print what would happen, claim nothing, send nothing'
+        type: boolean
+        default: true
+
+# Never two at once. The script also claims rows before sending, so a race would
+# be survivable, but belt and braces on the one job that can double-email a
+# prospect.
+concurrency:
+  group: execute-approved
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Execute approved actions
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+          RESEND_API_KEY:        ${{ secrets.RESEND_API_KEY }}
+          # Required. Without it there is no unsubscribe link and the script
+          # refuses to send rather than sending non-compliant mail.
+          WORKER_URL:            ${{ vars.WORKER_URL }}
+          MAIL_FROM:             ${{ vars.MAIL_FROM }}
+          POSTAL_ADDRESS:        ${{ vars.POSTAL_ADDRESS }}
+          MAX_SENDS:             '25'
+          # The guard before toJson is load-bearing. toJson(null) returns the
+          # string "null", which is truthy, so a bare `toJson(x) || y` would
+          # never fall through to the manual input on a workflow_dispatch run.
+          APPROVED_IDS:          ${{ github.event.client_payload.ids && toJson(github.event.client_payload.ids) || github.event.inputs.ids }}
+          GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node agent/execute-approved.mjs --dry-run
+          else
+            node agent/execute-approved.mjs
+          fi

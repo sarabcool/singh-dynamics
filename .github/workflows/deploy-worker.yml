@@ -1,0 +1,90 @@
+name: deploy-worker
+
+# The MacBook has parental controls and cannot install Node, so there is no
+# local wrangler and there never will be. CI is the only deploy path that
+# exists. That is a constraint, but it is also the better answer: the deployed
+# Worker is now whatever is on main, provably, rather than whatever was last
+# pasted into the dashboard by hand.
+#
+# Runs on:
+#   1. push to main touching the Worker. The normal path.
+#   2. workflow_dispatch, to redeploy without a code change, which is how you
+#      rotate a secret: update it in repo settings, then run this.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/worker/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+# Two deploys racing produces an indeterminate winner. Cancel the older one.
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # wrangler-action reads wrangler.toml, so bindings, cron triggers and the
+      # workers.dev flag are all applied here. Nothing needs clicking after this.
+      #
+      # `secrets:` is a newline-separated list of env var names. The action runs
+      # `wrangler secret bulk` with them, so the three secrets are re-pushed on
+      # every deploy and the Worker can never be deployed into a state where
+      # OPERATOR_TOKEN is unset (which would 401 every operator endpoint).
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: infra/worker
+          secrets: |
+            OPERATOR_TOKEN
+            GITHUB_TOKEN
+            RESEND_API_KEY
+        env:
+          OPERATOR_TOKEN: ${{ secrets.OPERATOR_TOKEN }}
+          # Not a typo. GitHub reserves the GITHUB_ prefix for repo secret names,
+          # so the PAT is stored as WORKER_GITHUB_TOKEN and renamed here to the
+          # env var the Worker's dispatch() actually reads.
+          GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+      # A green deploy step means Cloudflare accepted the upload. It does not
+      # mean the Worker runs. This hits the one endpoint that needs no auth and
+      # fails the job if the response is not the expected JSON, so a broken
+      # deploy is red here rather than discovered at 3am when a cron misfires.
+      - name: Verify /health
+        env:
+          WORKER_URL: ${{ vars.WORKER_URL }}
+        run: |
+          if [ -z "$WORKER_URL" ]; then
+            echo "::warning::Repo variable WORKER_URL is not set, skipping health check."
+            echo "Set it under Settings > Secrets and variables > Actions > Variables"
+            echo "to the workers.dev URL printed in the deploy step above."
+            exit 0
+          fi
+          echo "GET $WORKER_URL/health"
+          body=$(curl -fsS --max-time 15 "$WORKER_URL/health") || {
+            echo "::error::/health did not respond. Worker is deployed but not serving."
+            exit 1
+          }
+          echo "$body"
+          echo "$body" | grep -q '"ok":true' || {
+            echo "::error::/health responded but not with ok:true. Got: $body"
+            exit 1
+          }
+          echo "Worker is live."

@@ -1,0 +1,68 @@
+name: classify
+
+# Standalone classify, so the judgement pass can be run WITHOUT paying for a
+# sweep first.
+#
+# Until now classify only existed as step 2 of places-sweep.yml. That coupling
+# is what let it fail silently for four days: the only way to retry it was to
+# spend $1.28 on Places calls you did not need, so nobody retried it, so nobody
+# noticed it was matching zero rows. Re-running the cheap half of a pipeline
+# should never require re-running the expensive half.
+#
+# classify.mjs only ever fills in NULL columns, so this is safe to run repeatedly.
+# It picks up where it left off and costs nothing when there is nothing to do.
+on:
+  workflow_dispatch:
+    inputs:
+      vertical:
+        description: "Which leads to classify. 'local', 'powersports', or 'all'."
+        default: 'local'
+      limit:
+        description: 'Max leads this run'
+        default: '120'
+      max_cost_cents:
+        description: 'Hard ceiling on Anthropic spend'
+        default: '100'
+      dry_run:
+        description: 'Print the prompt and exit, call nothing'
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [classify]
+
+concurrency:
+  group: classify
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install
+        working-directory: agent
+        run: npm install --no-audit --no-fund
+
+      - name: Classify storefront vs residence
+        env:
+          ANTHROPIC_API_KEY:     ${{ secrets.ANTHROPIC_API_KEY }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+          MAX_COST_CENTS:        ${{ github.event.inputs.max_cost_cents || '100' }}
+          GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node agent/classify.mjs \
+            --vertical "${{ github.event.inputs.vertical || github.event.client_payload.vertical || 'local' }}" \
+            --limit "${{ github.event.inputs.limit || '120' }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}

@@ -1,0 +1,54 @@
+name: daily-digest
+
+# The Worker has been firing `daily-digest` at 08:00 ET since it was written and
+# nothing was listening. This is the listener.
+#
+# The schedule trigger is a fallback, 30 minutes behind the Worker, for the case
+# where the Worker is down. Two digests on one morning is a trivial annoyance;
+# no digest on the morning something broke is not. digest.mjs suppresses the
+# email when there is nothing to report, so the duplicate is usually silent.
+on:
+  repository_dispatch:
+    types: [daily-digest]
+  schedule:
+    - cron: '30 12 * * *'   # 08:30 ET
+  workflow_dispatch:
+    inputs:
+      always:
+        description: 'Send even if there is nothing pending'
+        type: boolean
+        default: false
+
+concurrency:
+  group: daily-digest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No `npm ci`. digest.mjs and its two lib files use only native fetch,
+      # so there is nothing to install and nothing to break on a stale lockfile.
+      - name: Build and send digest
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+          RESEND_API_KEY:        ${{ secrets.RESEND_API_KEY }}
+          WORKER_URL:            ${{ vars.WORKER_URL }}
+          MAIL_FROM:             ${{ vars.MAIL_FROM }}
+          OPERATOR_TO:           ${{ vars.OPERATOR_TO }}
+          ALWAYS_SEND:           ${{ github.event.inputs.always == 'true' && '1' || '' }}
+          GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node agent/digest.mjs

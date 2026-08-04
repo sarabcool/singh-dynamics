@@ -1,0 +1,51 @@
+name: site-down
+
+# Dispatched by the Worker's hourly uptime sweep after two consecutive failures.
+#
+# No schedule fallback here, deliberately. The uptime probe itself lives in the
+# Worker because it is cheap and deterministic, and duplicating it on Actions
+# cron would mean two systems disagreeing about whether a site is up.
+on:
+  repository_dispatch:
+    types: [site-down]
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Site slug to test the alert path against'
+        required: true
+      url:
+        description: 'URL to probe'
+        required: true
+
+# Keyed by slug, so two different sites going down at once still both alert.
+concurrency:
+  group: site-down-${{ github.event.client_payload.slug || github.event.inputs.slug }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Re-probe and alert
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+          RESEND_API_KEY:        ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM:             ${{ vars.MAIL_FROM }}
+          OPERATOR_TO:           ${{ vars.OPERATOR_TO }}
+          SITE_SLUG:             ${{ github.event.client_payload.slug || github.event.inputs.slug }}
+          SITE_URL:              ${{ github.event.client_payload.url || github.event.inputs.url }}
+          GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node agent/site-down.mjs
