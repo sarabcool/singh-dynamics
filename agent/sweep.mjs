@@ -1,23 +1,44 @@
 /**
- * Google Places discovery sweep. Tier A.
+ * Google Places (New) discovery sweep.
  *
- * Finds candidate shops and inserts them into `leads` as unscored rows.
- * agent/discover.mjs picks them up on the next nightly run and does the
- * reasoning. This file contains no AI: it is a deterministic API client, which
- * is why it is cheap and why it belongs on its own schedule.
+ * Finds local businesses that have NO WEBSITE, DO have a phone number, and
+ * operate from real premises rather than a house. Inserts them into `leads` as
+ * unscored rows. agent/classify.mjs does the judgement pass afterwards.
  *
- * CADENCE MATTERS MORE THAN ANYTHING ELSE HERE
- * --------------------------------------------
- * Weekly, not nightly. Text Search is ~$32/1,000 calls. Five terms across eight
- * towns is 40 calls, which nightly is roughly $38/month for a dataset that
- * barely moves. There are only a few hundred small powersports shops in
- * Michigan and new ones appear a handful of times a year.
+ * This file contains no AI. It is a deterministic API client, which is why it
+ * is cheap and why it belongs on its own schedule.
  *
- * Run it once by hand to map the state, then weekly to catch new entrants.
+ * WHAT THIS SWEEP IS FOR
+ * ----------------------
+ * The website-sales business, not the invoice tool. The qualifying signal is the
+ * absence of a website and the presence of a phone: something to pitch, and a
+ * way to pitch it. The powersports sweep is a different vertical and its rows
+ * are still in the table tagged vertical='powersports'.
  *
- *   node agent/sweep.mjs                 # default towns
+ * THREE FILTERS, IN ORDER OF COST
+ * -------------------------------
+ * 1. Free, at request time. `includePureServiceAreaBusinesses: false` tells
+ *    Google not to return businesses that have no premises at all: mobile
+ *    cleaners, most plumbers, anyone who only travels to the customer. This is
+ *    the default, but it is set explicitly because it is load-bearing here and
+ *    a future edit that flips it would silently fill the list with home offices.
+ *
+ * 2. Free, at insert time. Website present, phone missing, not OPERATIONAL,
+ *    chain name, or an address with no street number: rejected below without
+ *    ever reaching the model.
+ *
+ * 3. Paid, in classify.mjs. Whether "1042 Maple Ct" is a shop or a house is a
+ *    judgement call, and it is the only part of this that needs a model.
+ *
+ * CADENCE
+ * -------
+ * Weekly, not nightly. Text Search with this field mask bills at the Enterprise
+ * SKU, roughly $32/1,000 calls. The set of businesses without a website in a
+ * given town changes a few times a year, not a few times a day.
+ *
+ *   node agent/sweep.mjs                 # core towns
  *   node agent/sweep.mjs --full          # every town, the one-time sweep
- *   node agent/sweep.mjs --dry-run       # no writes, no API calls billed twice
+ *   node agent/sweep.mjs --dry-run       # prints the matrix, bills nothing
  */
 
 const {
@@ -26,6 +47,7 @@ const {
   CLOUDFLARE_ACCOUNT_ID,
   D1_DATABASE_ID,
   MAX_SEARCHES = '40',
+  VERTICAL = 'local',
 } = process.env;
 
 const DRY = process.argv.includes('--dry-run');
@@ -36,33 +58,48 @@ if (!GOOGLE_PLACES_API_KEY && !DRY) {
   process.exit(1);
 }
 
-// Terms and towns come from what actually worked in the manual sweep.
-// Northern Michigan produced far more no-website shops than metro Detroit:
-// snowmobile country runs smaller and buys less software.
+// Trades chosen for one reason: they work out of premises. A plumber or a
+// mobile detailer is usually a truck and a phone, which is a fine business but
+// fails the "is it a real location" test we are being asked to enforce. Shops
+// with a bay, a chair, or a counter pass it by construction.
 const TERMS = [
-  'motorcycle repair',
-  'powersports service',
-  'ATV repair',
-  'snowmobile repair',
+  'auto repair shop',
+  'tire shop',
+  'auto detailing shop',
+  'transmission repair',
+  'collision repair',
+  'quick lube',
   'small engine repair',
+  'appliance repair shop',
+  'barber shop',
+  'nail salon',
+  'hair salon',
+  'upholstery shop',
+  'machine shop',
+  'print shop',
 ];
 
+// Metro Detroit first. This is the website business, Sarab can drive to these,
+// and an in-person drop-in closes better than a cold call.
 const TOWNS_CORE = [
-  'Howell MI', 'Brighton MI', 'Fenton MI', 'Owosso MI',
-  'Gaylord MI', 'Houghton Lake MI', 'Cadillac MI', 'Traverse City MI',
+  'Novi MI', 'Wixom MI', 'Walled Lake MI', 'South Lyon MI',
+  'Northville MI', 'Plymouth MI', 'Livonia MI', 'Farmington Hills MI',
 ];
 
 const TOWNS_FULL = [
   ...TOWNS_CORE,
-  'Novi MI', 'Wixom MI', 'Walled Lake MI', 'New Hudson MI', 'South Lyon MI',
-  'Milford MI', 'Northville MI', 'Plymouth MI', 'Livonia MI', 'Farmington MI',
-  'Flint MI', 'Grayling MI', 'Alpena MI', 'Petoskey MI', 'Big Rapids MI',
-  'Mount Pleasant MI', 'Ludington MI', 'Manistee MI', 'Sault Ste Marie MI',
-  'Marquette MI', 'Escanaba MI', 'Iron Mountain MI',
+  'New Hudson MI', 'Milford MI', 'Brighton MI', 'Howell MI',
+  'Westland MI', 'Garden City MI', 'Redford MI', 'Dearborn Heights MI',
+  'Waterford MI', 'Pontiac MI', 'Auburn Hills MI', 'Rochester Hills MI',
+  'Troy MI', 'Madison Heights MI', 'Warren MI', 'Roseville MI',
+  'Ferndale MI', 'Oak Park MI', 'Southfield MI', 'Taylor MI',
 ];
 
-// Field mask. Places bills at the highest tier of ANY field requested, so one
-// expensive field upgrades the entire call. Add nothing here casually.
+// Places bills at the highest tier of ANY field requested, so one expensive
+// field upgrades the whole call. This mask is already Enterprise because of
+// phone/website/rating. businessStatus, pureServiceAreaBusiness and primaryType
+// sit in cheaper tiers, so they ride along for free. Adding anything genuinely
+// new here needs a pricing check first.
 const FIELD_MASK = [
   'places.id',
   'places.displayName',
@@ -73,11 +110,40 @@ const FIELD_MASK = [
   'places.userRatingCount',
   'places.location',
   'places.googleMapsUri',
+  'places.businessStatus',
+  'places.primaryTypeDisplayName',
+  'places.pureServiceAreaBusiness',
 ].join(',');
 
-// Cheap deterministic filters. Anything ambiguous is left for the reasoning
-// pass rather than guessed at here.
-const NAME_REJECT = /\b(bicycle|bike shop|cyclery|schwinn|trek|specialized|harley-davidson|polaris dealer|yamaha of|honda of|kawasaki of|autozone|o'reilly|advance auto|napa)\b/i;
+// Chains and franchises. They have corporate websites and no authority to buy
+// one anyway, so they are a waste of a dial even when the data looks right.
+const NAME_REJECT = new RegExp(
+  [
+    'autozone', "o'reilly", 'advance auto', 'napa', 'pep boys', 'midas',
+    'monro', 'meineke', 'jiffy lube', 'valvoline', 'take 5', 'firestone',
+    'goodyear', 'discount tire', 'belle tire', 'tires plus', 'mavis',
+    'maaco', 'caliber collision', 'crash champions', 'gerber collision',
+    'aamco', 'cottman', 'ziebart', 'supercuts', 'great clips', 'sport clips',
+    'fantastic sams', 'cost cutters', 'regis', 'ulta', 'sally beauty',
+    'fedex', 'ups store', 'office depot', 'staples', 'sir speedy', 'minuteman',
+    'u-haul', 'enterprise rent', 'hertz', 'penske',
+  ].join('|'),
+  'i'
+);
+
+// A storefront has a street number. "Novi, MI 48375, USA" with no number in
+// front is a service-area listing that slipped through, or a listing so thin it
+// is not worth a call.
+const HAS_STREET_NUMBER = /^\s*\d+[A-Za-z]?\s+\S/;
+
+function parseAddress(formatted) {
+  // "133 Veterans Dr, Fowlerville, MI 48836, USA"
+  const parts = (formatted ?? '').split(',').map((s) => s.trim());
+  const street = parts[0] ?? null;
+  const city = parts[1] ?? null;
+  const zip = (parts[2] ?? '').match(/\b(\d{5})\b/)?.[1] ?? null;
+  return { street, city, zip };
+}
 
 function slugify(name, city) {
   return `${name}-${city}`
@@ -113,7 +179,12 @@ async function textSearch(query) {
       'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
       'X-Goog-FieldMask': FIELD_MASK,
     },
-    body: JSON.stringify({ textQuery: query, maxResultCount: 20 }),
+    body: JSON.stringify({
+      textQuery: query,
+      maxResultCount: 20,
+      // Load-bearing. See header, filter 1.
+      includePureServiceAreaBusinesses: false,
+    }),
   });
 
   if (!res.ok) {
@@ -124,26 +195,57 @@ async function textSearch(query) {
   return data.places ?? [];
 }
 
+/**
+ * Returns null if the place should be kept, or a string reason to reject it.
+ * Reasons are counted and printed so a sweep that returns nothing is
+ * diagnosable without re-running it and paying twice.
+ */
+function rejectReason(p) {
+  const name = p.displayName?.text ?? '';
+  const { street } = parseAddress(p.formattedAddress);
+
+  if (!name) return 'no name';
+  if (p.websiteUri) return 'has website';
+  if (!p.nationalPhoneNumber) return 'no phone';
+  if (p.pureServiceAreaBusiness === true) return 'service-area business';
+  if (p.businessStatus && p.businessStatus !== 'OPERATIONAL') {
+    return `status ${p.businessStatus}`;
+  }
+  if (!p.formattedAddress) return 'no address';
+  if (!HAS_STREET_NUMBER.test(street ?? '')) return 'no street number';
+  if (NAME_REJECT.test(name)) return 'chain';
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 
 const towns = FULL ? TOWNS_FULL : TOWNS_CORE;
 const budget = Number(MAX_SEARCHES);
+const planned = towns.length * TERMS.length;
 
 let searches = 0;
 let seen = 0;
 let inserted = 0;
-let skipped = 0;
+const rejects = new Map();
 
 console.log(
-  `sweep: ${TERMS.length} terms x ${towns.length} towns, ` +
-  `budget ${budget} searches${DRY ? ' (DRY RUN)' : ''}`
+  `sweep: ${TERMS.length} terms x ${towns.length} towns = ${planned} possible, ` +
+  `budget ${budget} searches, est $${((Math.min(planned, budget) * 3.2) / 100).toFixed(2)}` +
+  `${DRY ? '  (DRY RUN, nothing billed)' : ''}`
 );
+
+if (planned > budget) {
+  console.log(
+    `note: budget cuts this short at ${budget}. Towns are worked in order, so ` +
+    `the tail of the town list will not be reached this run.`
+  );
+}
 
 outer:
 for (const town of towns) {
   for (const term of TERMS) {
     if (searches >= budget) {
-      console.log(`search budget ${budget} reached, stopping`);
+      console.log(`\nsearch budget ${budget} reached, stopping`);
       break outer;
     }
 
@@ -155,50 +257,47 @@ for (const town of towns) {
 
     for (const p of places) {
       seen++;
-      const name = p.displayName?.text ?? '';
-      const city = town.replace(/ MI$/, '');
 
-      if (NAME_REJECT.test(name)) {
-        skipped++;
+      const reason = rejectReason(p);
+      if (reason) {
+        rejects.set(reason, (rejects.get(reason) ?? 0) + 1);
         continue;
       }
 
-      // Over ~200 reviews almost certainly means a DMS is already in place.
-      // Not our customer, and messaging them burns effort for nothing.
-      if ((p.userRatingCount ?? 0) > 200) {
-        skipped++;
-        continue;
-      }
+      const name = p.displayName?.text;
+      const { street, city, zip } = parseAddress(p.formattedAddress);
 
-      // INSERT OR IGNORE on the unique slug makes the whole sweep idempotent.
-      // Re-running it is free of side effects, which is what lets it be a cron
-      // job nobody supervises. last_seen_at still moves so we can tell which
-      // shops have gone quiet.
+      // Key on the Places id, not on name+town. The town is where we searched,
+      // not where the business is, and keying on it duplicated every shop that
+      // showed up in more than one town's results.
       const rows = await d1(
-        `INSERT INTO leads (slug, name, city, state, phone, website, maps_url,
-                            address_street, lat, lng, review_count, rating, source)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-         ON CONFLICT(slug) DO UPDATE SET
+        `INSERT INTO leads (place_id, slug, name, city, state, phone, website,
+                            maps_url, address_street, address_zip, lat, lng,
+                            review_count, rating, primary_type, vertical, source)
+         VALUES (?,?,?,?,?,?,NULL,?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(place_id) DO UPDATE SET
            last_seen_at = datetime('now'),
            review_count = excluded.review_count,
            rating       = excluded.rating,
-           phone        = COALESCE(leads.phone, excluded.phone),
-           website      = COALESCE(leads.website, excluded.website)
+           phone        = COALESCE(leads.phone, excluded.phone)
          RETURNING id, first_seen_at = last_seen_at AS is_new`,
         [
-          slugify(name, city),
+          p.id,
+          slugify(name, city ?? town.replace(/ MI$/, '')),
           name,
-          city,
+          city ?? town.replace(/ MI$/, ''),
           'MI',
-          p.nationalPhoneNumber ?? null,
-          p.websiteUri ?? null,          // NULL here is the qualifying signal
+          p.nationalPhoneNumber,
           p.googleMapsUri ?? null,
-          p.formattedAddress ?? null,
+          street,
+          zip,
           p.location?.latitude ?? null,
           p.location?.longitude ?? null,
           p.userRatingCount ?? null,
           p.rating ?? null,
-          `places:${term}:${city}`,
+          p.primaryTypeDisplayName?.text ?? null,
+          VERTICAL,
+          `places:${term}:${town.replace(/ MI$/, '')}`,
         ]
       );
 
@@ -207,7 +306,11 @@ for (const town of towns) {
   }
 }
 
-const costCents = Math.round(searches * 3.2);   // ~$32 per 1,000 Text Search
+const costCents = Math.round(searches * 3.2);   // ~$32 per 1,000 Enterprise Text Search
+const rejectSummary = [...rejects.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .map(([r, n]) => `${r}: ${n}`)
+  .join(', ');
 
 if (!DRY) {
   await d1(
@@ -220,12 +323,13 @@ if (!DRY) {
       inserted,
       costCents,
       process.env.GITHUB_RUN_URL || null,
-      `${searches} searches, ${seen} seen, ${inserted} new, ${skipped} filtered`,
+      `${searches} searches, ${seen} seen, ${inserted} new. rejected: ${rejectSummary || 'none'}`,
     ]
   );
 }
 
 console.log(
-  `\ndone. ${searches} searches, ${seen} results, ` +
-  `${inserted} new leads, ${skipped} filtered. ~$${(costCents / 100).toFixed(2)}`
+  `\ndone. ${searches} searches, ${seen} results, ${inserted} new leads. ` +
+  `~$${(costCents / 100).toFixed(2)}`
 );
+console.log(`rejected: ${rejectSummary || 'none'}`);
