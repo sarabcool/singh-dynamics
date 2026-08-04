@@ -145,12 +145,35 @@ function parseAddress(formatted) {
   return { street, city, zip };
 }
 
-function slugify(name, city) {
-  return `${name}-${city}`
+/**
+ * Build the lead slug.
+ *
+ * FIXED 4 Aug 2026. This used to be just `name-city`, which is not unique, but
+ * the column is declared UNIQUE. Two genuinely different businesses sharing a
+ * name in one town, which is common for barbers and nail salons, produced the
+ * same slug with different place_ids. The upsert targets place_id, so it did
+ * not fire, and the INSERT died on the slug constraint instead, killing the
+ * whole sweep mid-run. It took down the full 28-town sweep at search 230 of 392.
+ *
+ * place_id is Google's stable per-location identifier and is already unique in
+ * this table, so a short suffix taken from it makes the slug unique by
+ * construction. Six characters is ample: this is a disambiguator, not a hash,
+ * and place_id uniqueness is what actually guarantees correctness.
+ *
+ * Uniqueness here is not cosmetic. slug is the /unsubscribe token, and two
+ * leads sharing one would mean an opt-out landing on the wrong business,
+ * leaving the person who actually asked to be left alone still on the list.
+ */
+function slugify(name, city, placeId) {
+  const base = `${name}-${city}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 60);
+
+  if (!placeId) return base;
+  const suffix = String(placeId).replace(/[^a-zA-Z0-9]/g, '').slice(-6).toLowerCase();
+  return `${base}-${suffix}`;
 }
 
 async function d1(sql, params = []) {
@@ -226,6 +249,7 @@ const planned = towns.length * TERMS.length;
 let searches = 0;
 let seen = 0;
 let inserted = 0;
+let failed = 0;
 const rejects = new Map();
 
 console.log(
@@ -270,38 +294,48 @@ for (const town of towns) {
       // Key on the Places id, not on name+town. The town is where we searched,
       // not where the business is, and keying on it duplicated every shop that
       // showed up in more than one town's results.
-      const rows = await d1(
-        `INSERT INTO leads (place_id, slug, name, city, state, phone, website,
-                            maps_url, address_street, address_zip, lat, lng,
-                            review_count, rating, primary_type, vertical, source)
-         VALUES (?,?,?,?,?,?,NULL,?,?,?,?,?,?,?,?,?,?)
-         ON CONFLICT(place_id) DO UPDATE SET
-           last_seen_at = datetime('now'),
-           review_count = excluded.review_count,
-           rating       = excluded.rating,
-           phone        = COALESCE(leads.phone, excluded.phone)
-         RETURNING id, first_seen_at = last_seen_at AS is_new`,
-        [
-          p.id,
-          slugify(name, city ?? town.replace(/ MI$/, '')),
-          name,
-          city ?? town.replace(/ MI$/, ''),
-          'MI',
-          p.nationalPhoneNumber,
-          p.googleMapsUri ?? null,
-          street,
-          zip,
-          p.location?.latitude ?? null,
-          p.location?.longitude ?? null,
-          p.userRatingCount ?? null,
-          p.rating ?? null,
-          p.primaryTypeDisplayName?.text ?? null,
-          VERTICAL,
-          `places:${term}:${town.replace(/ MI$/, '')}`,
-        ]
-      );
+      //
+      // Wrapped in try/catch as of 4 Aug 2026. One unexpected constraint
+      // violation used to abort the entire run, discarding every search still
+      // to come while still having paid for the ones already made. A single bad
+      // row is not worth $8 of unspent budget: log it, skip it, keep going.
+      try {
+        const rows = await d1(
+          `INSERT INTO leads (place_id, slug, name, city, state, phone, website,
+                              maps_url, address_street, address_zip, lat, lng,
+                              review_count, rating, primary_type, vertical, source)
+           VALUES (?,?,?,?,?,?,NULL,?,?,?,?,?,?,?,?,?,?)
+           ON CONFLICT(place_id) DO UPDATE SET
+             last_seen_at = datetime('now'),
+             review_count = excluded.review_count,
+             rating       = excluded.rating,
+             phone        = COALESCE(leads.phone, excluded.phone)
+           RETURNING id, first_seen_at = last_seen_at AS is_new`,
+          [
+            p.id,
+            slugify(name, city ?? town.replace(/ MI$/, ''), p.id),
+            name,
+            city ?? town.replace(/ MI$/, ''),
+            'MI',
+            p.nationalPhoneNumber,
+            p.googleMapsUri ?? null,
+            street,
+            zip,
+            p.location?.latitude ?? null,
+            p.location?.longitude ?? null,
+            p.userRatingCount ?? null,
+            p.rating ?? null,
+            p.primaryTypeDisplayName?.text ?? null,
+            VERTICAL,
+            `places:${term}:${town.replace(/ MI$/, '')}`,
+          ]
+        );
 
-      if (rows[0]?.is_new) inserted++;
+        if (rows[0]?.is_new) inserted++;
+      } catch (err) {
+        failed++;
+        console.error(`  insert failed for "${name}" (${city}): ${err.message}`);
+      }
     }
   }
 }
@@ -315,15 +349,17 @@ const rejectSummary = [...rejects.entries()]
 if (!DRY) {
   await d1(
     `INSERT INTO runs (job, trigger, finished_at, ok, items_in, items_out,
-                       cost_cents, gh_run_url, summary)
-     VALUES ('places-sweep', ?, datetime('now'), 1, ?, ?, ?, ?, ?)`,
+                       cost_cents, gh_run_url, summary, error)
+     VALUES ('places-sweep', ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?)`,
     [
       process.env.GITHUB_EVENT_NAME || 'manual',
+      failed === 0 ? 1 : 0,
       seen,
       inserted,
       costCents,
       process.env.GITHUB_RUN_URL || null,
       `${searches} searches, ${seen} seen, ${inserted} new. rejected: ${rejectSummary || 'none'}`,
+      failed ? `${failed} row(s) failed to insert` : null,
     ]
   );
 }
@@ -333,3 +369,4 @@ console.log(
   `~$${(costCents / 100).toFixed(2)}`
 );
 console.log(`rejected: ${rejectSummary || 'none'}`);
+if (failed) console.log(`insert failures: ${failed}`);
