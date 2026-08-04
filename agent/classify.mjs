@@ -268,7 +268,16 @@ for (let i = 0; i < leads.length; i += BATCH) {
   try {
     msg = await anthropic.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 4096,
+      // Was 4096, which silently ate two of three batches on 4 Aug 2026.
+      // Twenty leads of JSON is only ~1.5k tokens of output, so 4096 looked
+      // generous. It is not, because the budget also covers reasoning the model
+      // does before it writes anything. A batch that reasons its way to the
+      // ceiling returns content with no text block at all, `raw` comes out as
+      // the empty string, and JSON.parse fails on nothing. The symptom reads
+      // like a malformed response; the cause is a budget that ran out one step
+      // earlier. Headroom is far cheaper than a re-run: unused tokens are not
+      // billed, so this raise costs nothing on batches that were already fine.
+      max_tokens: 16000,
       system: SYSTEM,
       messages: [{ role: 'user', content: buildPrompt(batch) }],
     });
@@ -286,6 +295,21 @@ for (let i = 0; i < leads.length; i += BATCH) {
     .filter((b) => b.type === 'text')
     .map((b) => b.text)
     .join('');
+
+  // An empty `raw` means the response carried no text block. That is a
+  // different failure from malformed JSON and needs a different fix, so say so
+  // rather than letting it fall into the parse handler wearing the wrong label.
+  // stop_reason tells you which: 'max_tokens' means raise the ceiling above.
+  if (!raw.trim()) {
+    console.error(
+      `batch ${n} returned no text block, skipping ${batch.length} leads. ` +
+      `stop_reason=${msg.stop_reason} ` +
+      `blocks=[${msg.content.map((b) => b.type).join(',') || 'none'}] ` +
+      `out_tokens=${msg.usage?.output_tokens}`
+    );
+    batchErrors++;
+    continue;
+  }
 
   let verdicts;
   try {
