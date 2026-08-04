@@ -11,7 +11,18 @@ name: classify
 #
 # classify.mjs only ever fills in NULL columns, so this is safe to run repeatedly.
 # It picks up where it left off and costs nothing when there is nothing to do.
+# The daily schedule is the point. Without it, a big sweep leaves a backlog that
+# only a human clicking Run workflow can clear, which is not automation, it is a
+# chore with extra steps. The 4 Aug 2026 full sweep added 467 leads in one run,
+# far more than any single classify pass handles, and every unclassified lead is
+# a lead that cannot be prioritised or called.
+#
+# classify.mjs only fills NULL columns and picks up where it left off, so running
+# daily is safe and idempotent. On a day with nothing to do it queries once,
+# writes a `runs` row saying so, and exits having spent nothing.
 on:
+  schedule:
+    - cron: '0 9 * * *'   # 05:00 ET daily, drains whatever the sweep left behind
   workflow_dispatch:
     inputs:
       vertical:
@@ -19,10 +30,10 @@ on:
         default: 'local'
       limit:
         description: 'Max leads this run'
-        default: '120'
+        default: '400'
       max_cost_cents:
         description: 'Hard ceiling on Anthropic spend'
-        default: '100'
+        default: '500'
       dry_run:
         description: 'Print the prompt and exit, call nothing'
         type: boolean
@@ -40,7 +51,10 @@ permissions:
 jobs:
   classify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 400 leads is 20 batches at roughly 40s each, so about 14 minutes. 45 gives
+    # room for a slow batch without the job being killed mid-run and leaving the
+    # tail unclassified.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -59,10 +73,10 @@ jobs:
           CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
-          MAX_COST_CENTS:        ${{ github.event.inputs.max_cost_cents || '100' }}
+          MAX_COST_CENTS:        ${{ github.event.inputs.max_cost_cents || '500' }}
           GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           node agent/classify.mjs \
             --vertical "${{ github.event.inputs.vertical || github.event.client_payload.vertical || 'local' }}" \
-            --limit "${{ github.event.inputs.limit || '120' }}" \
+            --limit "${{ github.event.inputs.limit || '400' }}" \
             ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
