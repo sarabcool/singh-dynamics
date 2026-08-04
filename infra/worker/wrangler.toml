@@ -1,6 +1,34 @@
+# Singh Dynamics API Worker.
+#
+# NAME: stays "singh-dynamics". An earlier draft of this file renamed it to
+# "singh-dynamics-api" for clarity against "singh-dynamics-site", the Nitro
+# Worker serving singhdynamics.com. That draft never got committed, the Worker
+# deployed under this name on 4 Aug 2026, and renaming it now would create a
+# SECOND Worker and orphan the live one along with its cron triggers. Not worth
+# it. The two are still distinguishable:
+#   singh-dynamics-site  = the public website
+#   singh-dynamics       = cron, /trigger, /digest, /approve, /unsubscribe
+#
+# Everything below is applied at deploy time by .github/workflows/deploy-worker.yml.
+# Do not configure bindings or cron triggers in the dashboard. Dashboard edits get
+# silently reverted on the next deploy, and then you spend an evening working out
+# why a cron you definitely added is gone.
+
 name = "singh-dynamics"
 main = "index.js"
 compatibility_date = "2026-07-30"
+
+# Free tier keeps 24h of Worker logs. Costs nothing.
+#
+# Added 4 Aug 2026 after a session where the sweep failed four times in a row and
+# every diagnosis had to come from GitHub Actions logs and direct D1 queries,
+# because the Worker itself was a black box. The three crons below run unattended
+# at 3am, 8am and hourly, with nobody watching. Without this, a cron that starts
+# failing leaves no trace anywhere: repository_dispatch returns 204 regardless,
+# so even the `runs` table would look healthy. Logs are the only place a 3am
+# failure can actually be seen.
+[observability]
+enabled = true
 
 # Free plan allows 3 cron triggers, which is exactly what we use. Do not add a
 # fourth without upgrading to Workers Paid ($5/mo, allows 5).
@@ -27,7 +55,15 @@ database_id = "231279c0-6589-47a3-a3cc-ae7ba8713670"   # created 31 Jul 2026, EN
 [vars]
 GITHUB_REPO = "sarabcool/singh-dynamics"
 
-# Secrets, set with `wrangler secret put <NAME>`. Never in this file.
-#   GITHUB_TOKEN    fine-grained PAT, Contents read/write on this repo only
-#   OPERATOR_TOKEN  random 32+ chars, guards /digest /approve /trigger
-#   RESEND_API_KEY  sending only
+# Secrets are NOT set with `wrangler secret put` any more. There is no Node on
+# the MacBook, so there is no local wrangler. They are stored as GitHub repo
+# secrets and pushed to the Worker on every deploy by deploy-worker.yml.
+#
+#   Worker env var    <-  GitHub repo secret
+#   ---------------       ------------------
+#   GITHUB_TOKEN      <-  WORKER_GITHUB_TOKEN   (fine-grained PAT, Contents RW, this repo only)
+#   OPERATOR_TOKEN    <-  OPERATOR_TOKEN        (32+ random chars, guards /digest /approve /trigger)
+#   RESEND_API_KEY    <-  RESEND_API_KEY        (sending permission only)
+#
+# The name mismatch on the first one is not a typo. GitHub reserves the GITHUB_
+# prefix and will refuse to create a repo secret called GITHUB_TOKEN.
