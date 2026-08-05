@@ -25,4 +25,5 @@ jobs:
           node --check agent/classify.mjs
           node --check agent/discover.mjs
           node --check agent/inquiry-received.mjs
+          node --check agent/email-received.mjs
           node --check infra/worker/index.js
