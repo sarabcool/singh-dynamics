@@ -120,10 +120,13 @@ for (const row of rows) {
     if (draftText) {
       const subject = replySubject(row.subject || email.subject || 'Website');
       const payload = {
+        mail_kind: 'inbound_reply',
         to: from,
         subject,
         html: paragraphsToHtml(draftText),
         reply_to: 'sarab@singhdynamics.com',
+        in_reply_to: getHeader(headers, 'message-id'),
+        references: getHeader(headers, 'references'),
       };
 
       await d1(
@@ -175,6 +178,16 @@ async function getReceivedEmail(id) {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Resend receiving ${res.status}: ${JSON.stringify(body)}`);
   return body;
+}
+
+function getHeader(headers, name) {
+  const wanted = String(name || '').toLowerCase();
+  for (const [key, value] of Object.entries(headers || {})) {
+    if (String(key).toLowerCase() !== wanted) continue;
+    if (Array.isArray(value)) return value.map(String).join(' ').trim();
+    return String(value || '').trim();
+  }
+  return '';
 }
 
 function normalizeAddress(value) {

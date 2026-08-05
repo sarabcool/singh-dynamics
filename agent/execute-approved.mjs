@@ -7,7 +7,7 @@
  */
 
 import { d1, d1First, assertD1Env, logRun } from './lib/d1.mjs';
-import { sendProspect } from './lib/mail.mjs';
+import { sendInboundReply, sendProspect } from './lib/mail.mjs';
 
 const DRY = process.argv.includes('--dry-run');
 const MAX_SENDS = Number(process.env.MAX_SENDS || '25');
@@ -111,13 +111,25 @@ for (const row of claimed) {
       ? `r-${lead.slug}@${INBOUND_REPLY_DOMAIN}`
       : null;
 
-    await sendProspect({
-      to,
-      subject: body.subject,
-      html: body.html,
-      replyTo: automatedReplyTo || body.reply_to || 'sarab@singhdynamics.com',
-      unsubscribeUrl: `${WORKER_URL}/unsubscribe?t=${encodeURIComponent(lead.slug)}`,
-    });
+    const replyTo = automatedReplyTo || body.reply_to || 'sarab@singhdynamics.com';
+    if (body.mail_kind === 'inbound_reply') {
+      await sendInboundReply({
+        to,
+        subject: body.subject,
+        html: body.html,
+        replyTo,
+        inReplyTo: body.in_reply_to,
+        references: body.references,
+      });
+    } else {
+      await sendProspect({
+        to,
+        subject: body.subject,
+        html: body.html,
+        replyTo,
+        unsubscribeUrl: `${WORKER_URL}/unsubscribe?t=${encodeURIComponent(lead.slug)}`,
+      });
+    }
 
     await d1(
       `UPDATE leads SET status = 'contacted' WHERE id = ? AND status IN ('new','queued')`,
