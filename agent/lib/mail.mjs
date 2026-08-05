@@ -86,6 +86,24 @@ export function sendProspect({ to, subject, html, unsubscribeUrl, replyTo }) {
   });
 }
 
+export function sendInboundReply({ to, subject, html, replyTo, inReplyTo, references }) {
+  const headers = {};
+  const messageId = safeHeaderValue(inReplyTo);
+  const refs = safeHeaderValue(references);
+
+  if (messageId) headers['In-Reply-To'] = messageId;
+  if (refs || messageId) headers.References = refs || messageId;
+
+  return send({ to, subject, html, replyTo, headers });
+}
+
+function safeHeaderValue(value) {
+  return String(value || '')
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+    .slice(0, 1000);
+}
+
 export function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
