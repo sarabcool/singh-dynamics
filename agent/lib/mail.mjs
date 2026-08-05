@@ -92,7 +92,8 @@ export function sendInboundReply({ to, subject, html, replyTo, inReplyTo, refere
   const refs = safeHeaderValue(references);
 
   if (messageId) headers['In-Reply-To'] = messageId;
-  if (refs || messageId) headers.References = refs || messageId;
+  const referenceChain = [refs, messageId].filter(Boolean).join(' ');
+  if (referenceChain) headers.References = referenceChain;
 
   return send({ to, subject, html, replyTo, headers });
 }
