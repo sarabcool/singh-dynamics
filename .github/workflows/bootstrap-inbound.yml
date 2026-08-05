@@ -47,6 +47,7 @@ jobs:
             --config infra/worker/wrangler.toml --file=infra/migrations/005-inbound-email.sql
 
       - name: Configure receiving domain, DNS and webhook
+        id: inbound
         env:
           RESEND_API_KEY:         ${{ secrets.RESEND_API_KEY }}
           CLOUDFLARE_API_TOKEN:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -69,6 +70,7 @@ jobs:
           rm -f "$RUNNER_TEMP/resend-webhook-secret"
 
       - name: Enable lead-specific reply routing
+        if: ${{ steps.inbound.outputs.receiving_verified == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -97,6 +99,12 @@ jobs:
             exit 1
           fi
 
+      - name: Verification pending
+        if: ${{ steps.inbound.outputs.receiving_verified != 'true' }}
+        run: |
+          echo "DNS and webhook are configured, but Resend has not verified reply.singhdynamics.com yet."
+          echo "Reply-To routing remains disabled. Rerun this workflow later; it is safe and idempotent."
+
       - name: Verify resulting configuration
         env:
           CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -106,4 +114,8 @@ jobs:
             --name singh-dynamics \
             --config infra/worker/wrangler.toml \
             | grep -q 'RESEND_WEBHOOK_SECRET'
-          echo "Inbound automation bootstrap complete. DNS verification may still take time before mail starts arriving."
+          if [ "${{ steps.inbound.outputs.receiving_verified }}" = "true" ]; then
+            echo "Inbound automation bootstrap complete and reply routing is enabled."
+          else
+            echo "Inbound bootstrap staged safely. Receiving-domain verification is still pending."
+          fi
