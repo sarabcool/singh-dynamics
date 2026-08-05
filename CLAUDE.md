@@ -8,20 +8,29 @@ rather than silently picking a side.
 
 ## What this company is
 
-Singh Dynamics builds and operates software and websites for small local
-businesses. Two lines:
+Singh Dynamics builds autonomous back-office software that performs repetitive
+business work while deterministic policy gates keep real business decisions under
+human control.
 
-1. **Websites.** Static sites for local businesses with no web presence. Cash
-   now, and the wedge that gets us in the door.
-2. **Invoice reconciliation.** Software for small powersports shops that finds
-   unapplied supplier credits, duplicate charges, and price drift. The long game,
-   still unvalidated as of July 2026.
+The primary product is now **Singh AR**: a B2B accounts-receivable operations
+agent. A customer connects QuickBooks Online and a business mailbox. Singh AR
+monitors unpaid invoices, performs routine follow-up, understands replies,
+records payment promises, verifies payment state, and escalates only decisions
+outside the customer's configured authority policy.
 
-Operator: Sarab, 16. Legal entity and financial authority: his father.
-Sarab is at an internship until 7 August 2026 and will have roughly two hours a
-week from October. **Every design decision must survive that October constraint.**
-A system that needs ten hours a week is a failed system regardless of how well it
-works in August.
+The detailed source of truth is `docs/singh-ar/`. Read those files before any
+Singh AR implementation work.
+
+Legacy website, lead-generation, and earlier invoice-product code stays in the
+repository as reusable infrastructure/history. Do not delete it merely because
+the primary product changed.
+
+V1 is commercial B2B invoice workflow software, not consumer debt collection.
+Do not build consumer collections, legal threats, credit reporting, autonomous
+fee invention, debt purchasing, or money movement into V1.
+
+Every design decision must minimize ongoing operator work. A system that requires
+constant manual babysitting has failed the product goal.
 
 ---
 
@@ -53,6 +62,17 @@ pricing, terms, or the offer.
 
 Tier C actions do **not** interrupt. They queue into `approval_queue` and surface
 in one daily digest. Target: three minutes of human input per day.
+
+### Singh AR product authority
+
+Singh AR has a tenant-specific policy gateway documented in
+`docs/singh-ar/POLICY-ENGINE.md`. Routine follow-up to an existing business
+customer about a verified commercial invoice may execute autonomously only when
+the deterministic gateway returns `ALLOW`. The LLM cannot grant itself authority.
+Any dispute, change to payment terms, waiver, discount, settlement, invented fee,
+legal escalation, or action outside configured limits requires approval or is
+blocked. A source invoice marked paid, void, disputed, paused, or stale must never
+receive an automated reminder.
 
 ---
 
@@ -119,12 +139,16 @@ times by hand, say so and propose the manual version instead.
 | Facts | Cloudflare D1 | Free, no egress charges, already in stack |
 | Decisions | **Git commits** | History, blame, rollback, diff review, audit trail. No schema needed |
 | Client sites | Static HTML on Cloudflare Pages | $0, instant, indexes properly |
-| Email | Resend | Free to 3,000/mo |
-| Payments | Stripe Billing | Native subscriptions, no extra billing tool |
+| Customer mailbox | Gmail / Google Workspace first | Send from the customer's own mailbox and preserve real threads |
+| Internal/operator email | Resend | Existing transactional infrastructure |
+| AR source | QuickBooks Online first | Invoice/customer/payment source of truth with OAuth, webhooks, and sandbox testing |
+| Payments | Stripe Billing | Singh Dynamics subscription billing; Stripe Invoicing is a later AR connector |
 
-**Not used, deliberately:** Lovable (client-rendered React, weak default
-indexing, wrong tool for local SEO), n8n, Zapier, Make, any VPS. Each adds cost or
-an ops burden that fails the October test.
+**Production orchestration:** direct APIs, Cloudflare Workers, D1, and GitHub
+Actions remain the default. Zapier MCP is allowed for development coordination
+and connected-account agent actions, but Singh AR customer runtime must not depend
+on Sarab's personal Zapier connection. Avoid adding n8n, Make, or a VPS without a
+concrete requirement that the existing stack cannot meet.
 
 ---
 
