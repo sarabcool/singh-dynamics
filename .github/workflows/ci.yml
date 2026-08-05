@@ -1,6 +1,9 @@
 name: ci
 
 on:
+  push:
+    branches:
+      - 'agent/automation-consistency-hardening'
   pull_request:
   workflow_dispatch:
 
