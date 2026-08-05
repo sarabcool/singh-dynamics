@@ -139,8 +139,10 @@ times by hand, say so and propose the manual version instead.
 | Facts | Cloudflare D1 | Free, no egress charges, already in stack |
 | Decisions | **Git commits** | History, blame, rollback, diff review, audit trail. No schema needed |
 | Client sites | Static HTML on Cloudflare Pages | $0, instant, indexes properly |
-| Email | Resend | Free to 3,000/mo |
-| Payments | Stripe Billing | Native subscriptions, no extra billing tool |
+| Customer mailbox | Gmail / Google Workspace first | Send from the customer's own mailbox and preserve real threads |
+| Internal/operator email | Resend | Existing transactional infrastructure |
+| AR source | QuickBooks Online first | Invoice/customer/payment source of truth with OAuth, webhooks, and sandbox testing |
+| Payments | Stripe Billing | Singh Dynamics subscription billing; Stripe Invoicing is a later AR connector |
 
 **Production orchestration:** direct APIs, Cloudflare Workers, D1, and GitHub
 Actions remain the default. Zapier MCP is allowed for development coordination
