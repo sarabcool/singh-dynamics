@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - 'agent/automation-consistency-hardening'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install agent dependencies
+        working-directory: agent
+        run: npm install --no-audit --no-fund
+      - name: Syntax check
+        run: |
+          node --check agent/sweep.mjs
+          node --check agent/classify.mjs
+          node --check agent/discover.mjs
+          node --check agent/inquiry-received.mjs
+          node --check agent/email-received.mjs
+          node --check agent/execute-approved.mjs
+          node --check tools/bootstrap-inbound.mjs
+          node --check infra/worker/index.js
