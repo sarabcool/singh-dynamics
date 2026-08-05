@@ -180,6 +180,16 @@ async function getReceivedEmail(id) {
   return body;
 }
 
+function getHeader(headers, name) {
+  const wanted = String(name || '').toLowerCase();
+  for (const [key, value] of Object.entries(headers || {})) {
+    if (String(key).toLowerCase() !== wanted) continue;
+    if (Array.isArray(value)) return value.map(String).join(' ').trim();
+    return String(value || '').trim();
+  }
+  return '';
+}
+
 function normalizeAddress(value) {
   const s = String(value || '').trim();
   const match = s.match(/<([^<>\s]+@[^<>\s]+)>/);
