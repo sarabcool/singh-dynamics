@@ -131,9 +131,11 @@ times by hand, say so and propose the manual version instead.
 | Email | Resend | Free to 3,000/mo |
 | Payments | Stripe Billing | Native subscriptions, no extra billing tool |
 
-**Not used, deliberately:** Lovable (client-rendered React, weak default
-indexing, wrong tool for local SEO), n8n, Zapier, Make, any VPS. Each adds cost or
-an ops burden that fails the October test.
+**Production orchestration:** direct APIs, Cloudflare Workers, D1, and GitHub
+Actions remain the default. Zapier MCP is allowed for development coordination
+and connected-account agent actions, but Singh AR customer runtime must not depend
+on Sarab's personal Zapier connection. Avoid adding n8n, Make, or a VPS without a
+concrete requirement that the existing stack cannot meet.
 
 ---
 
