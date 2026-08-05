@@ -22,16 +22,18 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === '/unsubscribe') return handleUnsubscribe(url, env);
-    if (url.pathname === '/health') {
-      return json({ ok: true, ts: Date.now() });
-    }
+    if (url.pathname === '/health') return json({ ok: true, ts: Date.now() });
 
-    // Public website intake. It deliberately accepts no price, scope, payment or
-    // other Tier C decision. It only records that a human asked to hear from us.
     if (url.pathname === '/intake') {
       if (request.method === 'OPTIONS') return corsPreflight(request);
       if (request.method === 'POST') return handleIntake(request, env);
       return new Response('method not allowed', { status: 405 });
+    }
+
+    // Resend signs every webhook. The raw body must be verified before JSON
+    // parsing; re-stringifying parsed JSON changes the signature bytes.
+    if (url.pathname === '/webhooks/resend' && request.method === 'POST') {
+      return handleResendWebhook(request, env);
     }
 
     if (!authorized(request, env)) return new Response('unauthorized', { status: 401 });
@@ -97,7 +99,6 @@ async function handleIntake(request, env) {
     return json({ ok: false, error: 'invalid json' }, { status: 400, headers: cors });
   }
 
-  // Honeypot. Bots tend to fill every field; humans never see this one.
   if (clean(body.company_website, 200)) {
     return json({ ok: true }, { status: 202, headers: cors });
   }
@@ -118,11 +119,89 @@ async function handleIntake(request, env) {
      VALUES (?, ?, ?, ?, ?, ?, 'singhdynamics.com')`
   ).bind(shopName, contactName, email, phone, city, notes).run();
 
-  // Intake is reversible and contains no sales decision. Dispatching a research
-  // job is Tier A. That job may draft work but must not send or quote anything.
   await dispatch(env, 'inquiry-received', { reason: 'website-intake' });
-
   return json({ ok: true }, { status: 201, headers: cors });
+}
+
+async function handleResendWebhook(request, env) {
+  if (!env.RESEND_WEBHOOK_SECRET) {
+    console.error('RESEND_WEBHOOK_SECRET missing');
+    return new Response('webhook unavailable', { status: 503 });
+  }
+
+  const raw = await request.text();
+  const id = request.headers.get('svix-id') || request.headers.get('webhook-id');
+  const timestamp = request.headers.get('svix-timestamp') || request.headers.get('webhook-timestamp');
+  const signature = request.headers.get('svix-signature') || request.headers.get('webhook-signature');
+
+  const verified = await verifySvix({ raw, id, timestamp, signature, secret: env.RESEND_WEBHOOK_SECRET });
+  if (!verified) return new Response('invalid webhook', { status: 400 });
+
+  let event;
+  try { event = JSON.parse(raw); } catch { return new Response('invalid json', { status: 400 }); }
+  if (event.type !== 'email.received') return json({ ok: true, ignored: event.type || 'unknown' });
+
+  const data = event.data || {};
+  if (!data.email_id || !data.from) return new Response('missing email metadata', { status: 400 });
+
+  const inserted = await env.DB.prepare(
+    `INSERT OR IGNORE INTO inbound_emails
+       (svix_id, resend_email_id, from_email, to_json, subject, received_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id,
+    data.email_id,
+    String(data.from).toLowerCase(),
+    JSON.stringify(data.to || []),
+    data.subject || null,
+    data.created_at || event.created_at || new Date().toISOString(),
+  ).run();
+
+  // Resend retries webhooks. Only the first delivery should schedule work.
+  if ((inserted.meta?.changes || 0) > 0) {
+    await dispatch(env, 'email-received', {
+      reason: 'resend-inbound',
+      email_id: data.email_id,
+      svix_id: id,
+    });
+  }
+
+  return json({ ok: true });
+}
+
+async function verifySvix({ raw, id, timestamp, signature, secret }) {
+  if (!id || !timestamp || !signature || !secret?.startsWith('whsec_')) return false;
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) return false;
+
+  let keyBytes;
+  try { keyBytes = base64ToBytes(secret.slice('whsec_'.length)); } catch { return false; }
+  const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const signed = new TextEncoder().encode(`${id}.${timestamp}.${raw}`);
+  const digest = new Uint8Array(await crypto.subtle.sign('HMAC', key, signed));
+
+  for (const candidate of signature.split(/\s+/)) {
+    const [version, encoded] = candidate.split(',', 2);
+    if (version !== 'v1' || !encoded) continue;
+    let provided;
+    try { provided = base64ToBytes(encoded); } catch { continue; }
+    if (constantTimeBytesEqual(digest, provided)) return true;
+  }
+  return false;
+}
+
+function base64ToBytes(value) {
+  const binary = atob(value);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+}
+
+function constantTimeBytesEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
 }
 
 function authorized(request, env) {
