@@ -8,20 +8,29 @@ rather than silently picking a side.
 
 ## What this company is
 
-Singh Dynamics builds and operates software and websites for small local
-businesses. Two lines:
+Singh Dynamics builds autonomous back-office software that performs repetitive
+business work while deterministic policy gates keep real business decisions under
+human control.
 
-1. **Websites.** Static sites for local businesses with no web presence. Cash
-   now, and the wedge that gets us in the door.
-2. **Invoice reconciliation.** Software for small powersports shops that finds
-   unapplied supplier credits, duplicate charges, and price drift. The long game,
-   still unvalidated as of July 2026.
+The primary product is now **Singh AR**: a B2B accounts-receivable operations
+agent. A customer connects QuickBooks Online and a business mailbox. Singh AR
+monitors unpaid invoices, performs routine follow-up, understands replies,
+records payment promises, verifies payment state, and escalates only decisions
+outside the customer's configured authority policy.
 
-Operator: Sarab, 16. Legal entity and financial authority: his father.
-Sarab is at an internship until 7 August 2026 and will have roughly two hours a
-week from October. **Every design decision must survive that October constraint.**
-A system that needs ten hours a week is a failed system regardless of how well it
-works in August.
+The detailed source of truth is `docs/singh-ar/`. Read those files before any
+Singh AR implementation work.
+
+Legacy website, lead-generation, and earlier invoice-product code stays in the
+repository as reusable infrastructure/history. Do not delete it merely because
+the primary product changed.
+
+V1 is commercial B2B invoice workflow software, not consumer debt collection.
+Do not build consumer collections, legal threats, credit reporting, autonomous
+fee invention, debt purchasing, or money movement into V1.
+
+Every design decision must minimize ongoing operator work. A system that requires
+constant manual babysitting has failed the product goal.
 
 ---
 
