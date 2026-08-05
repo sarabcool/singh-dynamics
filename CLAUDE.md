@@ -63,6 +63,17 @@ pricing, terms, or the offer.
 Tier C actions do **not** interrupt. They queue into `approval_queue` and surface
 in one daily digest. Target: three minutes of human input per day.
 
+### Singh AR product authority
+
+Singh AR has a tenant-specific policy gateway documented in
+`docs/singh-ar/POLICY-ENGINE.md`. Routine follow-up to an existing business
+customer about a verified commercial invoice may execute autonomously only when
+the deterministic gateway returns `ALLOW`. The LLM cannot grant itself authority.
+Any dispute, change to payment terms, waiver, discount, settlement, invented fee,
+legal escalation, or action outside configured limits requires approval or is
+blocked. A source invoice marked paid, void, disputed, paused, or stale must never
+receive an automated reminder.
+
 ---
 
 ## Hard prohibitions
