@@ -7,7 +7,7 @@
  */
 
 import { d1, d1First, assertD1Env, logRun } from './lib/d1.mjs';
-import { sendProspect } from './lib/mail.mjs';
+import { sendInboundReply, sendProspect } from './lib/mail.mjs';
 
 const DRY = process.argv.includes('--dry-run');
 const MAX_SENDS = Number(process.env.MAX_SENDS || '25');
