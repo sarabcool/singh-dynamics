@@ -1,15 +1,8 @@
 name: places-sweep
 
-# Weekly, not nightly. Deliberate.
-#
-# Text Search with our field mask bills at the Enterprise SKU, ~$32/1,000 calls.
-# Forty calls a night is roughly $38/month for a dataset that barely changes:
-# the set of local businesses without a website moves a few times a year.
-# Weekly costs about $5/month and loses nothing.
-#
-# This lives on the Actions scheduler rather than a Worker cron because the free
-# Workers plan allows only three triggers and those are better spent on jobs
-# that run daily or hourly. Actions cron is free and unmetered.
+# Weekly discovery for the active website offer. The offer definition, including
+# vertical, search terms and geography, lives in agent/config/offer.mjs so a
+# manual workflow run cannot silently use a different targeting strategy.
 on:
   repository_dispatch:
     types: [places-sweep]
@@ -18,15 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       full:
-        description: 'Sweep every town, not just the core eight. Use once.'
+        description: 'Sweep every configured town, not just the core set. Use sparingly.'
         type: boolean
         default: false
       max_searches:
-        description: 'Hard ceiling on billable Text Search calls'
+        description: 'Hard ceiling on billable Google Places Text Search calls'
         default: '40'
-      vertical:
-        description: "Tag for these leads. 'local' = website sales."
-        default: 'local'
       classify:
         description: 'Run the Claude storefront pass after sweeping'
         type: boolean
@@ -46,20 +36,14 @@ jobs:
   sweep:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      # sweep.mjs itself has no dependencies, but classify.mjs needs the SDK and
-      # installing once here keeps the two steps in one job and one checkout.
       - name: Install
         working-directory: agent
         run: npm install --no-audit --no-fund
-
       - name: Sweep Google Places
         env:
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
@@ -67,14 +51,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
           MAX_SEARCHES:          ${{ github.event.inputs.max_searches || '40' }}
-          VERTICAL:              ${{ github.event.inputs.vertical || 'local' }}
           GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          node agent/sweep.mjs ${{ github.event.inputs.full == 'true' && '--full' || '' }}
-
-      # Separate step so a classifier failure never costs you the sweep. The
-      # Places rows are already committed to D1 by this point; classify.mjs only
-      # ever fills in columns and can be re-run for free against what it missed.
+        run: node agent/sweep.mjs ${{ github.event.inputs.full == 'true' && '--full' || '' }}
       - name: Classify storefront vs residence
         if: ${{ github.event.inputs.classify != 'false' }}
         env:
@@ -82,11 +60,6 @@ jobs:
           CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
-          VERTICAL:              ${{ github.event.inputs.vertical || 'local' }}
           MAX_COST_CENTS:        ${{ github.event.inputs.max_cost_cents || '100' }}
           GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node agent/classify.mjs
-
-# No PR step here on purpose. This job only writes rows and columns in D1 and
-# produces no files, so there is nothing to review in git. The reasoning pass in
-# discover-leads.yml is what produces reviewable output.
