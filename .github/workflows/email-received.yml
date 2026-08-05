@@ -1,0 +1,36 @@
+name: email-received
+
+on:
+  repository_dispatch:
+    types: [email-received]
+  workflow_dispatch:
+
+concurrency:
+  group: email-received
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install agent dependencies
+        working-directory: agent
+        run: npm install --no-audit --no-fund
+      - name: Process inbound replies
+        env:
+          RESEND_API_KEY:        ${{ secrets.RESEND_API_KEY }}
+          ANTHROPIC_API_KEY:     ${{ secrets.ANTHROPIC_API_KEY }}
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+          MAX_COST_CENTS:        '100'
+          GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node agent/email-received.mjs
