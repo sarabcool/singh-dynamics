@@ -1,4 +1,4 @@
-import { writeFile, chmod } from 'node:fs/promises';
+import { writeFile, chmod, appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const {
@@ -7,6 +7,7 @@ const {
   CLOUDFLARE_ACCOUNT_ID,
   WORKER_URL,
   RUNNER_TEMP = '/tmp',
+  GITHUB_OUTPUT,
   ROOT_DOMAIN = 'singhdynamics.com',
   INBOUND_DOMAIN = 'reply.singhdynamics.com',
 } = process.env;
@@ -27,7 +28,7 @@ console.log(`inbound bootstrap: domain=${INBOUND_DOMAIN}`);
 console.log(`webhook endpoint: ${webhookEndpoint}`);
 
 const domain = await ensureResendReceivingDomain();
-const domainDetails = await resend(`/domains/${domain.id}`);
+let domainDetails = await resend(`/domains/${domain.id}`);
 const receivingMx = (domainDetails.records || []).find(
   (record) => record.type === 'MX' && /inbound-smtp/i.test(String(record.value || ''))
 );
@@ -41,8 +42,13 @@ await ensureCloudflareMx({
   priority: Number(receivingMx.priority || 10),
 });
 
+// Verification is asynchronous. Request it on every run, then re-fetch the
+// domain. The workflow may safely be rerun after DNS propagates.
 await resend(`/domains/${domain.id}/verify`, { method: 'POST' });
-console.log(`requested Resend verification for ${INBOUND_DOMAIN}`);
+domainDetails = await resend(`/domains/${domain.id}`);
+const receivingVerified = domainDetails.status === 'verified';
+console.log(`Resend receiving status for ${INBOUND_DOMAIN}: ${domainDetails.status || 'unknown'}`);
+await setOutput('receiving_verified', receivingVerified ? 'true' : 'false');
 
 const webhook = await ensureWebhook();
 const secret = webhook.signing_secret;
@@ -55,6 +61,17 @@ await writeFile(secretPath, secret, { encoding: 'utf8', mode: 0o600 });
 await chmod(secretPath, 0o600);
 console.log(`signing secret written to protected runner temp file: ${secretPath}`);
 console.log(`webhook ${webhook.id} ready for email.received`);
+
+if (!receivingVerified) {
+  console.log('DNS is configured but Resend has not verified the receiving domain yet.');
+  console.log('Safe state: webhook secret can be installed, but outbound Reply-To routing must remain disabled.');
+  console.log('Rerun bootstrap-inbound after DNS propagation; it is idempotent.');
+}
+
+async function setOutput(name, value) {
+  if (!GITHUB_OUTPUT) return;
+  await appendFile(GITHUB_OUTPUT, `${name}=${value}\n`, 'utf8');
+}
 
 async function ensureResendReceivingDomain() {
   const list = await resend('/domains');
@@ -110,7 +127,6 @@ async function ensureWebhook() {
     console.log(`Resend webhook already exists: ${item.id}`);
   }
 
-  // Retrieve returns the signing secret even for an existing webhook.
   return resend(`/webhooks/${item.id}`, { sensitive: true });
 }
 
