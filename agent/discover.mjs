@@ -28,10 +28,11 @@ A score without a concrete reason is invalid. A business with a functioning webs
 Prefer independent auto repair businesses where a simple fast website can turn local search traffic into phone calls.
 `.trim();
 
-const started=Date.now(); let costCents=0, enriched=0;
+const started=Date.now(); let costCents=0, enriched=0, generated=0;
 const leads=await d1(`SELECT id, slug, name, city, state, phone, website, maps_url, review_count, score, storefront, primary_type
   FROM leads WHERE vertical=? AND disqualified=0 AND website IS NULL AND phone IS NOT NULL
-  AND storefront='yes' AND (email IS NULL OR score IS NULL) ORDER BY COALESCE(score,0) DESC, first_seen_at LIMIT ?`, [OFFER.vertical, Number(MAX_LEADS)]);
+  AND storefront='yes' AND COALESCE(score,0) >= ? AND (email IS NULL OR score IS NULL)
+  ORDER BY COALESCE(score,0) DESC, first_seen_at LIMIT ?`, [OFFER.vertical, OFFER.scoring.high, Number(MAX_LEADS)]);
 console.log(`enriching ${leads.length} lead(s) for offer=${OFFER.id}`);
 mkdirSync('sites/shops',{recursive:true});
 
@@ -55,8 +56,9 @@ Return exactly: {"still_operating":boolean,"disqualified":boolean,"disqualify_re
   enriched++;
   if(!disqualified && (data.score??0)>=OFFER.scoring.high && data.phone){
     writeFileSync(`sites/shops/${lead.slug}.json`,JSON.stringify({_generated:`discover.mjs ${new Date().toISOString()}`,_offer:OFFER.id,_review_before_shipping:true,slug:lead.slug,name:lead.name,city:lead.city,state:lead.state,phone:data.phone,theme:OFFER.site.themes[lead.id%OFFER.site.themes.length],schema_type:OFFER.site.schemaType,services:data.services??[],address:{street:data.address_street??'',zip:data.address_zip??''},maps_url:lead.maps_url??'',reviews:data.review_quotes??[],aggregate_rating:{enabled:false,value:'',count:lead.review_count??''}},null,2));
+    generated++;
   }
 }
-await d1(`INSERT INTO runs (job,trigger,finished_at,ok,items_in,items_out,cost_cents,gh_run_url,summary) VALUES ('discover-leads',?,datetime('now'),1,?,?,?,?,?)`,[process.env.GITHUB_EVENT_NAME||'manual',leads.length,enriched,costCents,process.env.GITHUB_RUN_URL||null,`offer=${OFFER.id}; enriched ${enriched}/${leads.length} in ${Math.round((Date.now()-started)/1000)}s`]);
-console.log(`done. ${enriched} enriched, ${costCents}c spent.`);
-if(process.env.GITHUB_OUTPUT){execSync(`echo "enriched=${enriched}" >> "$GITHUB_OUTPUT"`);execSync(`echo "cost_cents=${costCents}" >> "$GITHUB_OUTPUT"`);}
+await d1(`INSERT INTO runs (job,trigger,finished_at,ok,items_in,items_out,cost_cents,gh_run_url,summary) VALUES ('discover-leads',?,datetime('now'),1,?,?,?,?,?)`,[process.env.GITHUB_EVENT_NAME||'manual',leads.length,enriched,costCents,process.env.GITHUB_RUN_URL||null,`offer=${OFFER.id}; enriched ${enriched}/${leads.length}; generated ${generated} preview config(s) in ${Math.round((Date.now()-started)/1000)}s`]);
+console.log(`done. ${enriched} enriched, ${generated} preview config(s), ${costCents}c spent.`);
+if(process.env.GITHUB_OUTPUT){execSync(`echo "enriched=${enriched}" >> "$GITHUB_OUTPUT"`);execSync(`echo "generated=${generated}" >> "$GITHUB_OUTPUT"`);execSync(`echo "cost_cents=${costCents}" >> "$GITHUB_OUTPUT"`);}
