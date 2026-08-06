@@ -13,23 +13,23 @@
   "schema_type": "ComputerStore",
   "trade": "computer sales and service",
   "tagline": "Computer Sales, Repair & Technology Services",
-  "headline": "Computer sales, repair, and technology services in Novi.",
-  "subhead": "Khalsa Computers provides computer equipment, assembly, repair, and website hosting services.",
+  "headline": "Computers, fixed. Systems, built.",
+  "subhead": "Local computer sales, repair, assembly, and technology services in Novi, Michigan.",
   "seo_title": "Khalsa Computers | Computer Sales & Repair in Novi, MI",
   "seo_description": "Khalsa Computers in Novi, Michigan provides computer equipment, assembly, repair, and website hosting services. Call (248) 615-9248.",
   "services_heading": "Computer and technology services",
   "services": [
     {
-      "name": "Computer equipment",
-      "desc": "Computer equipment and related technology products from a local Novi computer business."
+      "name": "Computer repair",
+      "desc": "Repair services for computer hardware and related technology issues."
     },
     {
       "name": "Computer assembly",
       "desc": "Computer assembly service for customers who need systems put together and configured."
     },
     {
-      "name": "Computer repair",
-      "desc": "Repair services for computer hardware and related technology issues."
+      "name": "Computer equipment",
+      "desc": "Computer equipment and related technology products from a local Novi computer business."
     },
     {
       "name": "Website hosting",
