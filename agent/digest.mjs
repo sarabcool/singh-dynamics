@@ -31,9 +31,11 @@ assertD1Env();
 // not be sitting in an inbox looking actionable, which is why expires_at exists.
 const pending = await d1(
   `SELECT q.id, q.action_type, q.summary, q.rationale, q.created_at, q.expires_at,
-          l.name AS lead_name, l.city, l.phone, l.score, l.priority
+          l.name AS lead_name, l.city, l.phone, l.score, l.priority,
+          p.preview_url
      FROM approval_queue q
      LEFT JOIN leads l ON l.id = q.lead_id
+     LEFT JOIN lead_previews p ON p.lead_id = q.lead_id
     WHERE q.status = 'pending' AND q.expires_at > datetime('now')
     ORDER BY l.score DESC NULLS LAST, q.created_at`
 );
@@ -51,8 +53,9 @@ const newLeads = await d1(
 );
 
 const readyToCall = await d1(
-  `SELECT name, city, phone, score
-     FROM leads
+  `SELECT l.name, l.city, l.phone, l.score, p.preview_url
+     FROM leads l
+     LEFT JOIN lead_previews p ON p.lead_id = l.id
     WHERE status = 'new' AND disqualified = 0 AND opted_out = 0
       AND website IS NULL AND phone IS NOT NULL AND score >= 70
     ORDER BY score DESC LIMIT 10`
@@ -132,6 +135,7 @@ const pendingHtml = pending.map((q) => `
     </div>
     <div style="margin:.4rem 0 0">${escapeHtml(q.summary)}</div>
     <div style="${S.meta}">${escapeHtml(q.rationale)}</div>
+    ${q.preview_url ? `<div style="${S.meta}"><a href="${escapeHtml(q.preview_url)}">review preview</a></div>` : ''}
     <div style="${S.meta}">expires ${escapeHtml(q.expires_at)}</div>
   </div>`).join('');
 
@@ -139,7 +143,9 @@ const callHtml = readyToCall.map((l) => `
   <div style="${S.card}">
     <strong>${escapeHtml(l.name)}</strong> &middot; ${escapeHtml(l.city)}
     &middot; score ${l.score}
-    <div style="${S.meta}"><a href="tel:${escapeHtml(l.phone)}">${escapeHtml(l.phone)}</a></div>
+    <div style="${S.meta}"><a href="tel:${escapeHtml(l.phone)}">${escapeHtml(l.phone)}</a>
+      ${l.preview_url ? `&middot; <a href="${escapeHtml(l.preview_url)}">preview</a>` : ''}
+    </div>
   </div>`).join('');
 
 const failedHtml = failedRuns.map((r) => `
