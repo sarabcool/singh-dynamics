@@ -1,0 +1,14 @@
+{
+  "name": "singh-ar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Singh AR deterministic core: state engine, policy gateway, simulator. No external I/O.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "sim": "node bin/ar-sim.mjs"
+  }
+}
