@@ -138,6 +138,34 @@ test('review: far-future promise requires human instead of pausing collection fo
   assert.equal(runner.case.promise_date, null);
 });
 
+test('review: low-confidence operational reply always requires a human', () => {
+  const s = setup();
+  const runner = new EventRunner({ initialCase: s.arCase, initialInvoice: s.invoice, policy: s.policy, clock: s.clock });
+  runner.ingest([{
+    kind: 'reply', at: '2026-08-15T10:00:00Z',
+    reply: { intent: 'out_of_office', confidence: 0.2, rationale: 'uncertain auto-reply parse',
+      return_date: '2026-08-25', original_message_ref: 'low-confidence-ooo' },
+  }]);
+  assert.equal(runner.case.status, 'human_required');
+});
+
+test('review: claimed payment that fresh accounting data does not confirm escalates', () => {
+  const s = setup();
+  const runner = new EventRunner({ initialCase: s.arCase, initialInvoice: s.invoice, policy: s.policy, clock: s.clock });
+  runner.ingest([{
+    kind: 'reply', at: '2026-08-15T10:00:00Z',
+    reply: { intent: 'claimed_paid', confidence: 0.95, rationale: 'customer says paid',
+      original_message_ref: 'paid-claim-unconfirmed' },
+  }]);
+  assert.equal(runner.case.status, 'claimed_paid');
+  runner.ingest([{
+    kind: 'source_snapshot', at: '2026-08-15T10:01:00Z',
+    invoice: makeInvoiceSnapshot({ ...s.invoice, last_synced_at: '2026-08-15T10:01:00Z' }),
+  }]);
+  assert.equal(runner.case.status, 'human_required');
+  assert.equal(runner.log.filter((e) => e.kind === 'reconcile_claim').length, 1);
+});
+
 test('review: duplicate inbound message reference is applied once', () => {
   const s = setup();
   const runner = new EventRunner({ initialCase: s.arCase, initialInvoice: s.invoice, policy: s.policy, clock: s.clock });
