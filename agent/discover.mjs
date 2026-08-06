@@ -102,7 +102,10 @@ if (generated > 0 || PILOT_PREVIEW_SLUG) {
     const configPath = `sites/shops/${PILOT_PREVIEW_SLUG}.json`;
     if (!existsSync(configPath)) throw new Error(`pilot preview config not found: ${configPath}`);
     console.log(`building zero-AI pilot preview: ${PILOT_PREVIEW_SLUG}`);
-    execSync(`python3 sites/build.py ${PILOT_PREVIEW_SLUG} --preview`, { stdio: 'inherit' });
+    const buildCommand = PILOT_PREVIEW_SLUG === 'khalsa-computers'
+      ? 'python3 sites/build_khalsa.py --preview'
+      : `python3 sites/build.py ${PILOT_PREVIEW_SLUG} --preview`;
+    execSync(buildCommand, { stdio: 'inherit' });
   } else {
     console.log(`building and deploying ${generated} deterministic preview config(s)`);
     execSync('python3 sites/build.py --generated-only --preview', { stdio: 'inherit' });
