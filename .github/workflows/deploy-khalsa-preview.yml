@@ -9,10 +9,17 @@ on:
       - 'sites/build_khalsa.py'
       - 'sites/shops/khalsa-computers.json'
       - '.github/workflows/deploy-khalsa-preview.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'sites/build_khalsa.py'
+      - 'sites/shops/khalsa-computers.json'
+      - '.github/workflows/deploy-khalsa-preview.yml'
   workflow_dispatch:
 
 concurrency:
-  group: deploy-khalsa-preview
+  group: deploy-khalsa-preview-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
