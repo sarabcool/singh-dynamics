@@ -10,7 +10,7 @@ if (process.env.CI !== 'true') process.exit(0);
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arDir = path.resolve(here, '../ar');
-const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', 'test/'], {
+const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap'], {
   cwd: arDir,
   encoding: 'utf8',
   env: process.env,
