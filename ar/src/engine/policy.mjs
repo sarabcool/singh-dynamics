@@ -231,6 +231,29 @@ function evaluateExternalSend({
     codes.push('ZERO_BALANCE');
     return block(pv, evaluated_at, 'open balance is not positive', codes);
   }
+
+  // A customer-requested invoice copy is service, not another collection
+  // escalation. It must still be based on fresh source truth and must stop on
+  // manually/operationally halted cases, but reminder cadence, grace, balance
+  // authority, and max-reminder rules do not apply to the copy itself.
+  if (action.kind === 'resend_invoice') {
+    if (HALT_STATUSES.has(arCase.status)) {
+      return block(pv, evaluated_at,
+        `case status ${arCase.status} halts external sends`, ['CASE_HALTED']);
+    }
+    const staleness = (parseIso(clock.now()) - parseIso(invoice.last_synced_at)) / 1000;
+    if (staleness > policy.source_stale_seconds) {
+      return block(pv, evaluated_at,
+        `source snapshot is ${Math.floor(staleness)}s old, stale threshold ${policy.source_stale_seconds}s`,
+        ['SOURCE_STALE']);
+    }
+    if (action.not_before && parseIso(action.not_before) > parseIso(clock.now())) {
+      return block(pv, evaluated_at,
+        `action not_before ${action.not_before} is in the future`, ['DEFERRED_BY_NOT_BEFORE']);
+    }
+    return allow(pv, evaluated_at, 'verified customer-requested invoice copy');
+  }
+
   // 3. Due date + grace period must have passed.
   const dueInstant = dueDateToInstant(invoice.due_date);
   const graceEnd = addBusinessDaysIso(dueInstant, policy.grace_days);

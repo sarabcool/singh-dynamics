@@ -91,7 +91,7 @@ test('policy: MAX_REMINDERS_REACHED escalates to approval', () => {
   const { policy, invoice, arCase } = baseline({
     caseOverrides: { reminder_stage: 3 },
   });
-  const r = evaluatePolicy({ action: proposedReminder(), arCase, invoice, policy, clock: clock() });
+  const r = evaluatePolicy({ action: proposedReminder({ tone_stage: 4 }), arCase, invoice, policy, clock: clock() });
   assert.equal(r.decision, 'REQUIRE_APPROVAL');
   assert.ok(r.reason_codes.includes('MAX_REMINDERS_REACHED'));
 });
@@ -100,7 +100,7 @@ test('policy: INTERVAL_NOT_MET blocks', () => {
   const { policy, invoice, arCase } = baseline({
     caseOverrides: { reminder_stage: 1, last_action_at: '2026-08-14T09:00:00Z' },
   });
-  const r = evaluatePolicy({ action: proposedReminder(), arCase, invoice, policy, clock: clock() });
+  const r = evaluatePolicy({ action: proposedReminder({ tone_stage: 2 }), arCase, invoice, policy, clock: clock() });
   assert.equal(r.decision, 'BLOCK');
   assert.ok(r.reason_codes.includes('INTERVAL_NOT_MET'));
 });

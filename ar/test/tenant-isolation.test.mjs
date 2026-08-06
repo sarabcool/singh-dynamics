@@ -32,7 +32,7 @@ function policy(orgId) {
 function action(orgId) {
   return makeProposedAction({
     action_id: 'a1', organization_id: orgId, case_id: 'c1',
-    invoice_id: 'i1', kind: 'send_reminder', proposed_by: 'engine',
+    invoice_id: 'i1', kind: 'send_reminder', tone_stage: 1, proposed_by: 'engine',
     reason: 'test',
   });
 }
