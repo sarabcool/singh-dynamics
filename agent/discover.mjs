@@ -3,13 +3,15 @@
  * Tier A: research, scoring refinement and preview generation only. Never sends.
  */
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { OFFER, offerContext } from './config/offer.mjs';
 
 const { ANTHROPIC_API_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, D1_DATABASE_ID, MAX_LEADS='15', MAX_COST_CENTS='150' } = process.env;
-if (!ANTHROPIC_API_KEY) { console.error('ANTHROPIC_API_KEY missing'); process.exit(1); }
-const RUN_MAX_LEADS = Math.min(Number(MAX_LEADS) || 8, 8);
+const PILOT_PREVIEW_SLUG = String(MAX_LEADS).startsWith('pilot:') ? String(MAX_LEADS).slice('pilot:'.length).trim() : null;
+if (!ANTHROPIC_API_KEY && !PILOT_PREVIEW_SLUG) { console.error('ANTHROPIC_API_KEY missing'); process.exit(1); }
+const parsedMaxLeads = Number(MAX_LEADS);
+const RUN_MAX_LEADS = PILOT_PREVIEW_SLUG ? 0 : Math.min(Number.isFinite(parsedMaxLeads) && parsedMaxLeads >= 0 ? parsedMaxLeads : 8, 8);
 const RUN_MAX_COST_CENTS = Math.min(Number(MAX_COST_CENTS) || 75, 75);
 const PREVIEW_PROJECT = 'sarabcool-singh-dynamics-previews';
 
