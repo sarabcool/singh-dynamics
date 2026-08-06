@@ -9,7 +9,8 @@ Maps, build the site before the conversation, sell it already finished.
 ```bash
 python3 build.py            # build every shop in shops/
 python3 build.py 2wheelmax  # build one
-python3 build.py --check    # validate configs, write nothing
+python3 build.py --check                    # validate configs, write nothing
+python3 build.py --generated-only --preview # noindex staging previews
 ```
 
 Output lands in `dist/<slug>/` as a single `index.html` plus `robots.txt` and
@@ -29,11 +30,16 @@ the location block, the closing section, and a fixed bar pinned to the bottom of
 every mobile screen. A local service business does not need a contact form. It needs
 someone to tap a button.
 
-**Server-rendered HTML, not a React app.** Google indexes what it receives. This is
-the concrete reason not to use Lovable for these sites: Lovable ships client-rendered
-React with limited metadata control, and for a business whose entire value from a
-website is showing up in local search, that is the wrong trade. Lovable is the right
-tool for the studio's internal dashboards. Not for this.
+**Server-rendered HTML, not a React app.** Search and answer engines receive the
+actual business facts in the first response instead of waiting for client-side
+JavaScript. That makes the page simpler to crawl, quote and verify.
+
+**Answer-engine readable by default.** Live builds include a visible Quick answers
+section plus LocalBusiness, WebSite and Service JSON-LD built only from verified
+config fields. `robots.txt` explicitly allows OAI-SearchBot in addition to the normal
+open crawler rule. Prospect previews use `noindex,nofollow` so unfinished drafts do
+not become search results. We intentionally do not emit FAQPage schema for ordinary
+local businesses, and none of this guarantees a ranking or an AI citation.
 
 **Four themes.** Set `theme` to `steel`, `pine`, `clay`, or `ice`. Each changes hue,
 accent, heading weight and corner radius together. Vary it between shops in the same
