@@ -8,7 +8,12 @@ export class Clock {
     this._now = nowIso;
   }
   now() { return this._now; }
-  advanceTo(nextIso) { this._now = nextIso; }
+  advanceTo(nextIso) {
+    const current = parseIso(this._now).getTime();
+    const next = parseIso(nextIso).getTime();
+    if (next < current) throw new Error(`clock cannot move backwards: ${nextIso} < ${this._now}`);
+    this._now = nextIso;
+  }
   advanceHours(n) {
     const d = new Date(this._now);
     d.setUTCHours(d.getUTCHours() + n);

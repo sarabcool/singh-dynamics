@@ -66,22 +66,28 @@ export function advanceOverdueState({ arCase, invoice, policy, clock }) {
 // Apply an inbound reply to the case. The classifier already validated the
 // intent vocabulary. We map intents to case-state changes deterministically.
 // We do NOT act on the reply here (no sends); we only update state.
-export function applyReply({ arCase, invoice, policy, reply, clock }) {
+export function applyReply({
+  arCase, invoice, policy, reply, clock, promisePolicyResult = null,
+}) {
   const transitions = [];
   let c = { ...arCase, awaiting_reply: true }; // a reply arrived; block sends until handled
 
   switch (reply.intent) {
     case 'promise_to_pay': {
-      if (reply.confidence < policy.low_confidence_threshold
-          || (reply.extracted_dates || []).length !== 1) {
-        c = markHumanRequired(c, transitions, 'ambiguous or low-confidence promise');
+      // A classifier result alone cannot mutate the case into promised. The
+      // runner must first pass a record_promise action through the policy gate.
+      if (!promisePolicyResult || promisePolicyResult.decision !== 'ALLOW') {
+        c = markHumanRequired(c, transitions, 'promise is outside automatic policy authority');
         break;
       }
       const promiseIso = `${reply.extracted_dates[0]}T12:00:00Z`;
       // Only auto-record if we're in an active state.
       if (c.status === 'overdue' || c.status === 'monitoring') {
-        const t = transitionTo(c, 'promised', 'clear promise_to_pay');
-        c = { ...t.case, promise_date: promiseIso, next_action_at: promiseIso };
+        const t = transitionTo(c, 'promised', 'policy-authorized promise_to_pay');
+        c = {
+          ...t.case, promise_date: promiseIso, next_action_at: promiseIso,
+          awaiting_reply: false,
+        };
         transitions.push(t.note);
       }
       break;
@@ -165,6 +171,18 @@ export function recordReminderSent({ arCase, policy, clock }) {
     reminder_stage: stage,
     last_action_at: clock.now(),
     next_action_at,
+    awaiting_reply: false,
+  };
+}
+
+// A requested invoice copy is customer service, not a collection escalation.
+// It updates contact timing but deliberately does not increment reminder_stage.
+export function recordInvoiceResent({ arCase, policy, clock }) {
+  const intervalDays = policy.reminder_intervals_business_days[arCase.reminder_stage] ?? 0;
+  return {
+    ...arCase,
+    last_action_at: clock.now(),
+    next_action_at: addBusinessDaysIso(clock.now(), intervalDays),
     awaiting_reply: false,
   };
 }
