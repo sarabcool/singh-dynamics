@@ -14,7 +14,8 @@ import { makeReplyClassification } from '../domain/reply.mjs';
 import { makeProposedAction } from '../domain/action.mjs';
 import { evaluate as evaluatePolicy } from './policy.mjs';
 import {
-  reconcileWithSource, advanceOverdueState, applyReply, recordReminderSent, recordInvoiceResent,
+  reconcileWithSource, advanceOverdueState, applyReply, reconcileUnconfirmedPaymentClaim,
+  recordReminderSent, recordInvoiceResent,
 } from './transitions.mjs';
 
 // Event kinds accepted by the runner:
@@ -81,8 +82,16 @@ export class EventRunner {
             || nextInvoice.provider_invoice_id !== this.case.invoice_id) {
           throw new Error('source_snapshot identity mismatch');
         }
+        const wasClaimedPaid = this.case.status === 'claimed_paid';
         this.invoice = nextInvoice;
         this._reconcileAndAdvance('source_snapshot');
+        if (wasClaimedPaid && this.case.status === 'claimed_paid') {
+          const claim = reconcileUnconfirmedPaymentClaim({
+            arCase: this.case, invoice: this.invoice,
+          });
+          this.case = claim.case;
+          for (const t of claim.transitions) this._log('reconcile_claim', t);
+        }
         break;
       }
       case 'reply': {

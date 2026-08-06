@@ -18,7 +18,8 @@ export {
 
 export { evaluate as evaluatePolicy } from './engine/policy.mjs';
 export {
-  reconcileWithSource, advanceOverdueState, applyReply, recordReminderSent, recordInvoiceResent,
+  reconcileWithSource, advanceOverdueState, applyReply, reconcileUnconfirmedPaymentClaim,
+  recordReminderSent, recordInvoiceResent,
 } from './engine/transitions.mjs';
 export { EventRunner } from './engine/runner.mjs';
 

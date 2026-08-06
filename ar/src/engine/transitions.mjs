@@ -72,6 +72,13 @@ export function applyReply({
   const transitions = [];
   let c = { ...arCase, awaiting_reply: true }; // a reply arrived; block sends until handled
 
+  // Classification uncertainty never grants operational authority. For V1, a
+  // low-confidence inbound reply pauses automation regardless of intent.
+  if (reply.confidence < policy.low_confidence_threshold) {
+    c = markHumanRequired(c, transitions, 'low-confidence inbound reply');
+    return { case: c, transitions };
+  }
+
   switch (reply.intent) {
     case 'promise_to_pay': {
       // A classifier result alone cannot mutate the case into promised. The
@@ -159,6 +166,22 @@ function markHumanRequired(c, transitions, reason) {
 }
 
 // Record an executed reminder in case state and bump stage.
+// After a customer claims payment, one fresh accounting reconciliation is
+// authoritative. If it still does not confirm payment, stop automation and ask
+// a human to resolve the discrepancy rather than looping forever.
+export function reconcileUnconfirmedPaymentClaim({ arCase, invoice }) {
+  if (arCase.status !== 'claimed_paid') return { case: arCase, transitions: [] };
+  if (invoice.source_status === 'paid' || invoice.source_status === 'void') {
+    return { case: arCase, transitions: [] };
+  }
+  const t = transitionTo(arCase, 'human_required',
+    `customer claimed payment but source remains ${invoice.source_status}`);
+  return {
+    case: { ...t.case, next_action_at: null, awaiting_reply: false },
+    transitions: [t.note],
+  };
+}
+
 export function recordReminderSent({ arCase, policy, clock }) {
   const stage = arCase.reminder_stage + 1;
   let next_action_at = null;

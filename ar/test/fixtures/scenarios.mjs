@@ -161,7 +161,7 @@ export function allScenarios() {
       expect: { caseStatus: 'resolved' } }); }
 
   { const policy = defaultPolicy();
-    scenarios.push({ id: 12, title: 'claimed_paid + source disagrees -> no autonomous action', policy,
+    scenarios.push({ id: 12, title: 'claimed_paid + fresh source disagrees -> human review', policy,
       initialInvoice: invoiceFor(12, { due: '2026-08-04', synced_at: '2026-08-15T09:00:00Z' }),
       initialCase: caseFor(12, policy, { status: 'overdue', stage: 1, last_action_at: '2026-08-06T09:00:00Z' }),
       events: [{ kind: 'reply', at: '2026-08-15T09:00:00Z',
@@ -169,7 +169,7 @@ export function allScenarios() {
           original_message_ref: 'msg-12-a' } },
         { kind: 'source_snapshot', at: '2026-08-15T10:00:00Z',
           invoice: invoiceFor(12, { due: '2026-08-04', synced_at: '2026-08-15T10:00:00Z' }) }],
-      expect: { caseStatus: 'claimed_paid', noExternalSendProposed: true } }); }
+      expect: { caseStatus: 'human_required', noExternalSendProposed: true } }); }
 
   { const policy = defaultPolicy();
     scenarios.push({ id: 13, title: 'partial payment in source -> cadence continues on reduced balance', policy,
