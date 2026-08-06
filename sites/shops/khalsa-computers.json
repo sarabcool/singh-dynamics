@@ -1,7 +1,7 @@
 {
   "_pilot_preview": true,
   "_review_before_shipping": true,
-  "_preview_revision": "2026-08-06-redesign-v2",
+  "_preview_revision": "2026-08-06-redesign-v3-pr-deploy",
   "_verification_note": "Production domain is customer-owned. Street address and hours are intentionally omitted from the preview until the owner confirms they should be public.",
   "slug": "khalsa-computers",
   "name": "Khalsa Computers",
