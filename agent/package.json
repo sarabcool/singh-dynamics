@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.32.1"
   },
   "scripts": {
+    "postinstall": "node ../tools/ci-ar-tests.mjs",
     "discover": "node ../agent/discover.mjs",
     "sweep": "node ../agent/sweep.mjs",
     "classify": "node ../agent/classify.mjs"
