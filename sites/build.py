@@ -284,6 +284,10 @@ color:{t['muted']}}}
 border-radius:{t['radius']};padding:1.5rem}}
 .card h3{{margin-bottom:.5rem}}
 .card p{{margin:0;color:{t['muted']};font-size:.95rem}}
+.answers{{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.answer{{background:{t['surface']};border:1px solid {t['line']};border-radius:{t['radius']};padding:1.2rem}}
+.answer-q{{font-size:.98rem;font-weight:700;margin:0 0 .45rem}}
+.answer-a{{font-size:.94rem;color:{t['muted']};margin:0}}
 
 /* hours */
 .split{{display:grid;gap:2.5rem;grid-template-columns:1fr}}
@@ -413,6 +417,39 @@ def render(shop, preview=False):
 <a class="btn btn-ghost" href="#hours">Hours &amp; location</a>
 </div>
 <div class="trust">{"".join(trust)}</div>
+</div></section>''')
+
+    # ---- quick answers: concise verified facts for search and answer engines
+    answers = []
+    service_names = [s.get("name") for s in (shop.get("services") or []) if s.get("name")]
+    if service_names:
+        answers.append((
+            f"What services does {name} offer?",
+            f"{name} offers {', '.join(service_names)}.",
+        ))
+    answer_addr = shop.get("address") or {}
+    location_bits = [answer_addr.get("street"), f"{city}, {state}"]
+    location = ", ".join(str(x) for x in location_bits if x)
+    if location:
+        answers.append((f"Where is {name} located?", f"{name} is located at {location}."))
+    if phone_p:
+        answers.append((f"How do I contact {name}?", f"Call {name} at {phone_p}."))
+    answer_hours = hours_rows(shop.get("hours"))
+    if answer_hours:
+        hours_text = "; ".join(f"{span}: {value}" for span, value in answer_hours)
+        answers.append((f"When is {name} open?", f"{hours_text}."))
+    if areas:
+        answers.append((
+            f"What areas does {name} serve?",
+            f"{name} serves {', '.join(areas)}.",
+        ))
+    if answers:
+        answer_cards = "".join(
+            f'<div class="answer"><h3 class="answer-q">{e(q)}</h3><p class="answer-a">{e(a)}</p></div>'
+            for q, a in answers
+        )
+        b.append(f'''<section id="quick-answers"><div class="wrap">
+<h2>Quick answers</h2><div class="answers">{answer_cards}</div>
 </div></section>''')
 
     # ---- services
