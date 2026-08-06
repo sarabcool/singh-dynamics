@@ -240,7 +240,10 @@ test('review: clock rejects out-of-order events', () => {
 
 test('review: requested invoice copy can be resent without increasing reminder stage', () => {
   const s = setup({
-    invoiceOverrides: { invoice_link_url: 'https://example.test/invoice/inv-1' },
+    invoiceOverrides: {
+      invoice_link_url: 'https://example.test/invoice/inv-1',
+      last_synced_at: '2026-08-15T09:59:30Z',
+    },
     caseOverrides: { reminder_stage: 1, last_action_at: '2026-08-06T09:00:00Z' },
   });
   const runner = new EventRunner({ initialCase: s.arCase, initialInvoice: s.invoice, policy: s.policy, clock: s.clock });
