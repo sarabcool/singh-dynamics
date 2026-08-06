@@ -16,13 +16,38 @@ export function evaluate({ action, arCase, invoice, policy, clock, lastReply = n
   const evaluated_at = clock.now();
   const pv = policy.policy_version_id;
 
-  // Cross-tenant defense first. Any mismatch is a bug; refuse everything.
+  // Identity defense first. Tenant isolation is necessary but not sufficient:
+  // a same-tenant action must still point at the exact case and invoice being
+  // evaluated, and the case must be pinned to the policy version in use.
   if (action.organization_id !== policy.organization_id
       || action.organization_id !== invoice.organization_id
       || action.organization_id !== arCase.organization_id) {
     return makePolicyResult({
       decision: 'BLOCK', reason: 'tenant mismatch across action/case/invoice/policy',
       reason_codes: ['TENANT_MISMATCH'],
+      policy_version_id: pv, evaluated_at,
+    });
+  }
+  if (action.case_id !== arCase.case_id
+      || action.invoice_id !== arCase.invoice_id
+      || action.invoice_id !== invoice.provider_invoice_id) {
+    return makePolicyResult({
+      decision: 'BLOCK', reason: 'case/invoice identity mismatch',
+      reason_codes: ['ENTITY_MISMATCH'],
+      policy_version_id: pv, evaluated_at,
+    });
+  }
+  if (arCase.policy_version_id !== policy.policy_version_id) {
+    return makePolicyResult({
+      decision: 'BLOCK', reason: 'case is pinned to a different policy version',
+      reason_codes: ['POLICY_VERSION_MISMATCH'],
+      policy_version_id: pv, evaluated_at,
+    });
+  }
+  if (parseIso(policy.effective_from) > parseIso(evaluated_at)) {
+    return makePolicyResult({
+      decision: 'BLOCK', reason: 'policy version is not effective yet',
+      reason_codes: ['POLICY_NOT_EFFECTIVE'],
       policy_version_id: pv, evaluated_at,
     });
   }
@@ -50,19 +75,30 @@ export function evaluate({ action, arCase, invoice, policy, clock, lastReply = n
 
   switch (action.kind) {
     case 'wait':
-    case 'resolve':
     case 'escalate_human':
     case 'pause':
-    case 'unpause':
     case 'verify_payment':
       return allow(pv, evaluated_at, `internal action ${action.kind}`);
+
+    case 'unpause':
+      return requireApproval(pv, evaluated_at,
+        'resuming a paused collection case requires human authority', ['HUMAN_RESUME_REQUIRED']);
+
+    case 'resolve':
+      if (invoice.source_status === 'paid' || invoice.source_status === 'void') {
+        return allow(pv, evaluated_at, `source-verified resolve: ${invoice.source_status}`);
+      }
+      return block(pv, evaluated_at,
+        `cannot resolve while source status is ${invoice.source_status}`, ['SOURCE_NOT_RESOLVED']);
 
     case 'record_promise':
       return evaluateRecordPromise({ action, policy, evaluated_at, lastReply });
 
     case 'send_reminder':
     case 'resend_invoice':
-      return evaluateExternalSend({ action, arCase, invoice, policy, clock, evaluated_at });
+      return evaluateExternalSend({
+        action, arCase, invoice, policy, clock, evaluated_at, lastReply,
+      });
 
     case 'accept_payment_plan':
       return evaluatePaymentPlan({ action, arCase, invoice, policy, evaluated_at, lastReply });
@@ -129,6 +165,14 @@ function evaluateRecordPromise({ action, policy, evaluated_at, lastReply }) {
   }
   // Excessively far future dates (>60 days out) get a human eye.
   const daysOut = diffDays(`${dates[0]}T12:00:00Z`, evaluated_at);
+  if (daysOut < 0) {
+    return makePolicyResult({
+      decision: 'REQUIRE_APPROVAL',
+      reason: `promise date ${dates[0]} is already in the past`,
+      reason_codes: ['DATE_IN_PAST'],
+      policy_version_id: pv, evaluated_at,
+    });
+  }
   if (daysOut > 60) {
     return makePolicyResult({
       decision: 'REQUIRE_APPROVAL',
@@ -147,9 +191,35 @@ function evaluateRecordPromise({ action, policy, evaluated_at, lastReply }) {
   return allow(pv, evaluated_at, 'promise recording within policy');
 }
 
-function evaluateExternalSend({ action, arCase, invoice, policy, clock, evaluated_at }) {
+function evaluateExternalSend({
+  action, arCase, invoice, policy, clock, evaluated_at, lastReply,
+}) {
   const pv = policy.policy_version_id;
   const codes = [];
+
+  // The action payload cannot choose its own escalation level. Reminder tone
+  // is derived from case stage so an LLM cannot jump from friendly to final.
+  if (action.kind === 'send_reminder') {
+    const expectedTone = arCase.reminder_stage + 1;
+    if (action.tone_stage !== expectedTone) {
+      return block(pv, evaluated_at,
+        `tone stage ${action.tone_stage} does not match expected ${expectedTone}`,
+        ['TONE_STAGE_MISMATCH']);
+    }
+  }
+
+  // Resending an invoice is only routine when it is answering a clear request.
+  if (action.kind === 'resend_invoice') {
+    if (!lastReply || lastReply.intent !== 'request_invoice_copy'
+        || lastReply.confidence < policy.low_confidence_threshold) {
+      return requireApproval(pv, evaluated_at,
+        'invoice resend lacks a clear matching customer request', ['RESEND_CONTEXT_MISSING']);
+    }
+    if (!invoice.invoice_link_url) {
+      return requireApproval(pv, evaluated_at,
+        'no verified source invoice link/copy is available', ['SOURCE_COPY_UNAVAILABLE']);
+    }
+  }
 
   // 1. Invoice source status must be open. Never send on paid/void/unknown.
   if (invoice.source_status !== 'open') {
@@ -226,6 +296,21 @@ function evaluatePaymentPlan({ action, arCase, invoice, policy, evaluated_at, la
       decision: 'REQUIRE_APPROVAL',
       reason: 'tenant has not enabled bounded payment-plan authority',
       reason_codes: ['PLAN_AUTHORITY_DISABLED'],
+      policy_version_id: pv, evaluated_at,
+    });
+  }
+  if (!lastReply || lastReply.intent !== 'payment_plan_request') {
+    return makePolicyResult({
+      decision: 'REQUIRE_APPROVAL',
+      reason: 'no matching customer payment-plan request is attached',
+      reason_codes: ['PLAN_REPLY_CONTEXT_MISSING'],
+      policy_version_id: pv, evaluated_at,
+    });
+  }
+  if (lastReply.confidence < policy.low_confidence_threshold) {
+    return makePolicyResult({
+      decision: 'REQUIRE_APPROVAL', reason: 'classifier confidence below threshold',
+      reason_codes: ['LOW_CONFIDENCE'],
       policy_version_id: pv, evaluated_at,
     });
   }
