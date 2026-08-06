@@ -379,7 +379,7 @@ def render(shop, preview=False):
         f'<meta property="og:description" content="{e(desc)}">',
         '<meta property="og:type" content="website">',
         f'<meta property="og:locale" content="en_US">',
-        '<meta name="robots" content="index,follow">',
+        f'<meta name="robots" content="{"noindex,nofollow" if preview else "index,follow"}">',
         f'<style>{css(shop.get("theme","steel"))}</style>',
         f'<script type="application/ld+json">{json_ld(shop, url)}</script>',
         '</head>',
@@ -567,7 +567,7 @@ def build_one(path, check_only=False, preview=False):
     (out / "index.html").write_text(page)
 
     domain = shop.get("domain", "").rstrip("/")
-    if domain:
+    if domain and not preview:
         (out / "robots.txt").write_text(
             f"User-agent: *\nAllow: /\nUser-agent: OAI-SearchBot\nAllow: /\n\nSitemap: https://{domain}/sitemap.xml\n")
         (out / "sitemap.xml").write_text(
@@ -586,6 +586,8 @@ def build_one(path, check_only=False, preview=False):
 def main():
     args = [a for a in sys.argv[1:]]
     check_only = "--check" in args
+    generated_only = "--generated-only" in args
+    preview = "--preview" in args
     args = [a for a in args if not a.startswith("--")]
 
     if not SHOPS.exists():
@@ -594,6 +596,15 @@ def main():
 
     files = sorted(p for p in SHOPS.glob("*.json")
                    if not p.name.startswith("_"))
+    if generated_only:
+        generated = []
+        for p in files:
+            try:
+                if json.loads(p.read_text()).get("_generated"):
+                    generated.append(p)
+            except Exception:
+                continue
+        files = generated
     if args:
         files = [p for p in files if p.stem in args]
         if not files:
@@ -605,7 +616,7 @@ def main():
 
     print(f"shopsites: {'checking' if check_only else 'building'} "
           f"{len(files)} shop(s)\n")
-    ok = sum(build_one(p, check_only) for p in files)
+    ok = sum(build_one(p, check_only, preview=preview) for p in files)
     print(f"\n{ok}/{len(files)} succeeded")
     return 0 if ok == len(files) else 1
 
