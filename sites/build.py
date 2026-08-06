@@ -145,93 +145,78 @@ def hours_rows(hours):
 # --------------------------------------------------------------------------
 
 def json_ld(shop, url):
-    """
-    LocalBusiness schema. This is the single highest-value SEO element for a
-    business whose customers find them in Maps, not via a blog post.
-
-    aggregateRating is deliberately opt-in and defaults off. Marking up review
-    scores you collected from Google as your own structured data is against
-    Google's guidelines and can earn a manual action. Only enable it if the
-    shop collects reviews on their own site.
-    """
-    addr = shop.get("address") or {}
-    data = {
-        "@context": "https://schema.org",
-        "@type": shop.get("schema_type", "AutoRepair"),
-        "name": shop["name"],
-        "telephone": tel_href(shop["phone"]),
-        "url": url,
-    }
-    if shop.get("about"):
-        data["description"] = shop["about"]
-    if addr.get("street"):
-        data["address"] = {
-            "@type": "PostalAddress",
-            "streetAddress": addr.get("street", ""),
-            "addressLocality": shop["city"],
-            "addressRegion": shop["state"],
-            "postalCode": addr.get("zip", ""),
-            "addressCountry": "US",
-        }
-    else:
-        data["address"] = {
-            "@type": "PostalAddress",
-            "addressLocality": shop["city"],
-            "addressRegion": shop["state"],
-            "addressCountry": "US",
-        }
-    if shop.get("geo"):
-        data["geo"] = {
-            "@type": "GeoCoordinates",
-            "latitude": shop["geo"].get("lat"),
-            "longitude": shop["geo"].get("lng"),
-        }
-    if shop.get("maps_url"):
-        data["hasMap"] = shop["maps_url"]
-    if shop.get("price_range"):
-        data["priceRange"] = shop["price_range"]
-
-    spec = []
-    for day, val in (shop.get("hours") or {}).items():
-        if not val or val in ("closed", "Closed"):
-            continue
-        spec.append({
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": SCHEMA_DAY.get(day, day),
-            "opens": val[0],
-            "closes": val[1],
+    graph = []
+    if url:
+        graph.append({
+            '@type': 'WebSite',
+            'url': url,
         })
-    if spec:
-        data["openingHoursSpecification"] = spec
-
-    areas = shop.get("service_area") or []
-    if areas:
-        data["areaServed"] = [
-            {"@type": "City", "name": a} for a in areas
-        ]
-
-    if shop.get("services"):
-        data["hasOfferCatalog"] = {
-            "@type": "OfferCatalog",
-            "name": "Services",
-            "itemListElement": [
-                {"@type": "Offer",
-                 "itemOffered": {"@type": "Service", "name": s["name"]}}
-                for s in shop["services"]
-            ],
+    business_id = (url + '#business') if url else None
+    business = {
+        '@type': shop.get('schema_type', 'AutoRepair'),
+        'name': shop['name'],
+        'telephone': tel_href(shop['phone']),
+    }
+    if business_id:
+        business['@id'] = business_id
+    if shop.get('about'):
+        business['description'] = shop['about']
+    addr = shop.get('address', {})
+    postal = {}
+    if addr.get('street'):
+        postal['streetAddress'] = addr['street']
+    if addr.get('zip'):
+        postal['postalCode'] = addr['zip']
+    if shop.get('city'):
+        postal['addressLocality'] = shop['city']
+    if shop.get('state'):
+        postal['addressRegion'] = shop['state']
+    if shop.get('country'):
+        postal['addressCountry'] = shop['country']
+    if postal:
+        postal['@type'] = 'PostalAddress'
+        business['address'] = postal
+    if shop.get('geo'):
+        business['geo'] = shop['geo']
+    if shop.get('maps_url'):
+        business['hasMap'] = shop['maps_url']
+    if shop.get('price_range'):
+        business['priceRange'] = shop['price_range']
+    if shop.get('hours'):
+        business['openingHoursSpecification'] = shop['hours']
+    if shop.get('service_area'):
+        business['areaServed'] = shop['service_area']
+    same_as = []
+    if shop.get('facebook_url'):
+        same_as.append(shop['facebook_url'])
+    for s in (shop.get('same_as') or []):
+        if isinstance(s, str) and (s.startswith('http://') or s.startswith('https://')):
+            same_as.append(s)
+    if same_as:
+        business['sameAs'] = same_as
+    ar = shop.get('aggregate_rating', {})
+    if ar and ar.get('enabled'):
+        business['aggregateRating'] = {
+            '@type': 'AggregateRating',
+            'ratingValue': ar['value'],
+            'reviewCount': ar['count'],
         }
-
-    rating = shop.get("aggregate_rating")
-    if rating and rating.get("enabled"):
-        data["aggregateRating"] = {
-            "@type": "AggregateRating",
-            "ratingValue": rating["value"],
-            "reviewCount": rating["count"],
+    services = shop.get('services') or []
+    if services:
+        offers = []
+        for svc in services:
+            item = {'@type': 'Service', 'name': svc['name']}
+            if svc.get('desc'):
+                item['description'] = svc['desc']
+            if business_id:
+                item['provider'] = {'@id': business_id}
+            offers.append({'@type': 'Offer', 'itemOffered': item})
+        business['hasOfferCatalog'] = {
+            '@type': 'OfferCatalog',
+            'itemListElement': offers,
         }
-
-    return json.dumps(data, indent=2)
-
-
+    graph.append(business)
+    return json.dumps({'@context': 'https://schema.org', '@graph': graph}, indent=2)
 # --------------------------------------------------------------------------
 # css
 # --------------------------------------------------------------------------
@@ -299,6 +284,10 @@ color:{t['muted']}}}
 border-radius:{t['radius']};padding:1.5rem}}
 .card h3{{margin-bottom:.5rem}}
 .card p{{margin:0;color:{t['muted']};font-size:.95rem}}
+.answers{{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.answer{{background:{t['surface']};border:1px solid {t['line']};border-radius:{t['radius']};padding:1.2rem}}
+.answer-q{{font-size:.98rem;font-weight:700;margin:0 0 .45rem}}
+.answer-a{{font-size:.94rem;color:{t['muted']};margin:0}}
 
 /* hours */
 .split{{display:grid;gap:2.5rem;grid-template-columns:1fr}}
@@ -351,7 +340,7 @@ html{{scroll-behavior:auto}}}}
 # render
 # --------------------------------------------------------------------------
 
-def render(shop):
+def render(shop, preview=False):
     name = shop["name"]
     city, state = shop["city"], shop["state"]
     phone_h = tel_href(shop["phone"])
@@ -394,7 +383,7 @@ def render(shop):
         f'<meta property="og:description" content="{e(desc)}">',
         '<meta property="og:type" content="website">',
         f'<meta property="og:locale" content="en_US">',
-        '<meta name="robots" content="index,follow">',
+        f'<meta name="robots" content="{"noindex,nofollow" if preview else "index,follow"}">',
         f'<style>{css(shop.get("theme","steel"))}</style>',
         f'<script type="application/ld+json">{json_ld(shop, url)}</script>',
         '</head>',
@@ -428,6 +417,39 @@ def render(shop):
 <a class="btn btn-ghost" href="#hours">Hours &amp; location</a>
 </div>
 <div class="trust">{"".join(trust)}</div>
+</div></section>''')
+
+    # ---- quick answers: concise verified facts for search and answer engines
+    answers = []
+    service_names = [s.get("name") for s in (shop.get("services") or []) if s.get("name")]
+    if service_names:
+        answers.append((
+            f"What services does {name} offer?",
+            f"{name} offers {', '.join(service_names)}.",
+        ))
+    answer_addr = shop.get("address") or {}
+    location_bits = [answer_addr.get("street"), f"{city}, {state}"]
+    location = ", ".join(str(x) for x in location_bits if x)
+    if location:
+        answers.append((f"Where is {name} located?", f"{name} is located at {location}."))
+    if phone_p:
+        answers.append((f"How do I contact {name}?", f"Call {name} at {phone_p}."))
+    answer_hours = hours_rows(shop.get("hours"))
+    if answer_hours:
+        hours_text = "; ".join(f"{span}: {value}" for span, value in answer_hours)
+        answers.append((f"When is {name} open?", f"{hours_text}."))
+    if areas:
+        answers.append((
+            f"What areas does {name} serve?",
+            f"{name} serves {', '.join(areas)}.",
+        ))
+    if answers:
+        answer_cards = "".join(
+            f'<div class="answer"><h3 class="answer-q">{e(q)}</h3><p class="answer-a">{e(a)}</p></div>'
+            for q, a in answers
+        )
+        b.append(f'''<section id="quick-answers"><div class="wrap">
+<h2>Quick answers</h2><div class="answers">{answer_cards}</div>
 </div></section>''')
 
     # ---- services
@@ -561,7 +583,7 @@ def check(shop, path):
 # main
 # --------------------------------------------------------------------------
 
-def build_one(path, check_only=False):
+def build_one(path, check_only=False, preview=False):
     shop = json.loads(path.read_text())
     problems, warnings = check(shop, path)
 
@@ -578,13 +600,13 @@ def build_one(path, check_only=False):
 
     out = DIST / shop["slug"]
     out.mkdir(parents=True, exist_ok=True)
-    page = render(shop)
+    page = render(shop, preview=preview)
     (out / "index.html").write_text(page)
 
     domain = shop.get("domain", "").rstrip("/")
-    if domain:
+    if domain and not preview:
         (out / "robots.txt").write_text(
-            f"User-agent: *\nAllow: /\n\nSitemap: https://{domain}/sitemap.xml\n")
+            f"User-agent: *\nAllow: /\nUser-agent: OAI-SearchBot\nAllow: /\n\nSitemap: https://{domain}/sitemap.xml\n")
         (out / "sitemap.xml").write_text(
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -601,6 +623,8 @@ def build_one(path, check_only=False):
 def main():
     args = [a for a in sys.argv[1:]]
     check_only = "--check" in args
+    generated_only = "--generated-only" in args
+    preview = "--preview" in args
     args = [a for a in args if not a.startswith("--")]
 
     if not SHOPS.exists():
@@ -609,6 +633,15 @@ def main():
 
     files = sorted(p for p in SHOPS.glob("*.json")
                    if not p.name.startswith("_"))
+    if generated_only:
+        generated = []
+        for p in files:
+            try:
+                if json.loads(p.read_text()).get("_generated"):
+                    generated.append(p)
+            except Exception:
+                continue
+        files = generated
     if args:
         files = [p for p in files if p.stem in args]
         if not files:
@@ -620,7 +653,7 @@ def main():
 
     print(f"shopsites: {'checking' if check_only else 'building'} "
           f"{len(files)} shop(s)\n")
-    ok = sum(build_one(p, check_only) for p in files)
+    ok = sum(build_one(p, check_only, preview=preview) for p in files)
     print(f"\n{ok}/{len(files)} succeeded")
     return 0 if ok == len(files) else 1
 
