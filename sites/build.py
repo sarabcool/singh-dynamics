@@ -351,7 +351,7 @@ html{{scroll-behavior:auto}}}}
 # render
 # --------------------------------------------------------------------------
 
-def render(shop):
+def render(shop, preview=False):
     name = shop["name"]
     city, state = shop["city"], shop["state"]
     phone_h = tel_href(shop["phone"])
@@ -561,7 +561,7 @@ def check(shop, path):
 # main
 # --------------------------------------------------------------------------
 
-def build_one(path, check_only=False):
+def build_one(path, check_only=False, preview=False):
     shop = json.loads(path.read_text())
     problems, warnings = check(shop, path)
 
@@ -578,13 +578,13 @@ def build_one(path, check_only=False):
 
     out = DIST / shop["slug"]
     out.mkdir(parents=True, exist_ok=True)
-    page = render(shop)
+    page = render(shop, preview=preview)
     (out / "index.html").write_text(page)
 
     domain = shop.get("domain", "").rstrip("/")
     if domain:
         (out / "robots.txt").write_text(
-            f"User-agent: *\nAllow: /\n\nSitemap: https://{domain}/sitemap.xml\n")
+            f"User-agent: *\nAllow: /\nUser-agent: OAI-SearchBot\nAllow: /\n\nSitemap: https://{domain}/sitemap.xml\n")
         (out / "sitemap.xml").write_text(
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -627,3 +627,58 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+def build_json_ld(shop, url=None):
+    graph = []
+    if url:
+        graph.append({'@type': 'WebSite', '@id': url, 'url': url, 'name': shop.get('name', '')})
+    biz = {'@type': 'LocalBusiness'}
+    biz_id = (url or '') + '#business'
+    biz['@id'] = biz_id
+    for field in ['name','address','telephone','url','geo','openingHoursSpecification','areaServed','priceRange','hasMap']:
+        if shop.get(field):
+            biz[field] = shop[field]
+    same_as = []
+    if shop.get('facebook_url'):
+        same_as.append(shop['facebook_url'])
+    for s in (shop.get('same_as') or []):
+        if isinstance(s, str) and s.startswith('http'):
+            same_as.append(s)
+    if same_as:
+        biz['sameAs'] = same_as
+    if shop.get('aggregateRating') and shop.get('enable_aggregate_rating'):
+        biz['aggregateRating'] = shop['aggregateRating']
+    services = shop.get('services') or []
+    if services:
+        offers = []
+        for svc in services:
+            offer = {'@type': 'Offer', 'itemOffered': {'@type': 'Service', 'name': svc.get('name','')}}
+            if svc.get('description'):
+                offer['itemOffered']['description'] = svc['description']
+            if biz_id:
+                offer['itemOffered']['provider'] = {'@id': biz_id}
+            offers.append(offer)
+        biz['hasOfferCatalog'] = {'@type': 'OfferCatalog', 'itemListElement': offers}
+    graph.append(biz)
+    return {'@context': 'https://schema.org', '@graph': graph}
+
+def quick_answers_html(shop):
+    parts = []
+    services = shop.get('services') or []
+    if services:
+        names = ', '.join(s.get('name','') for s in services if s.get('name'))
+        if names:
+            parts.append(f'<p><strong>Services:</strong> {names}</p>')
+    if shop.get('address'):
+        parts.append(f'<p><strong>Location:</strong> {shop["address"]}</p>')
+    if shop.get('telephone'):
+        parts.append(f'<p><strong>Phone:</strong> {shop["telephone"]}</p>')
+    if shop.get('openingHoursSpecification'):
+        parts.append(f'<p><strong>Hours:</strong> See our hours page</p>')
+    if shop.get('service_area'):
+        parts.append(f'<p><strong>Service area:</strong> {shop["service_area"]}</p>')
+    if not parts:
+        return ''
+    inner = ''.join(parts)
+    css = '<style>.quick-answers{background:#f8f8f8;padding:1em 1.5em;margin:1em 0;border-left:4px solid currentColor;}</style>'
+    return f'{css}<section class="quick-answers" id="quick-answers"><h2>Quick answers</h2>{inner}</section>'
