@@ -145,93 +145,78 @@ def hours_rows(hours):
 # --------------------------------------------------------------------------
 
 def json_ld(shop, url):
-    """
-    LocalBusiness schema. This is the single highest-value SEO element for a
-    business whose customers find them in Maps, not via a blog post.
-
-    aggregateRating is deliberately opt-in and defaults off. Marking up review
-    scores you collected from Google as your own structured data is against
-    Google's guidelines and can earn a manual action. Only enable it if the
-    shop collects reviews on their own site.
-    """
-    addr = shop.get("address") or {}
-    data = {
-        "@context": "https://schema.org",
-        "@type": shop.get("schema_type", "AutoRepair"),
-        "name": shop["name"],
-        "telephone": tel_href(shop["phone"]),
-        "url": url,
-    }
-    if shop.get("about"):
-        data["description"] = shop["about"]
-    if addr.get("street"):
-        data["address"] = {
-            "@type": "PostalAddress",
-            "streetAddress": addr.get("street", ""),
-            "addressLocality": shop["city"],
-            "addressRegion": shop["state"],
-            "postalCode": addr.get("zip", ""),
-            "addressCountry": "US",
-        }
-    else:
-        data["address"] = {
-            "@type": "PostalAddress",
-            "addressLocality": shop["city"],
-            "addressRegion": shop["state"],
-            "addressCountry": "US",
-        }
-    if shop.get("geo"):
-        data["geo"] = {
-            "@type": "GeoCoordinates",
-            "latitude": shop["geo"].get("lat"),
-            "longitude": shop["geo"].get("lng"),
-        }
-    if shop.get("maps_url"):
-        data["hasMap"] = shop["maps_url"]
-    if shop.get("price_range"):
-        data["priceRange"] = shop["price_range"]
-
-    spec = []
-    for day, val in (shop.get("hours") or {}).items():
-        if not val or val in ("closed", "Closed"):
-            continue
-        spec.append({
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": SCHEMA_DAY.get(day, day),
-            "opens": val[0],
-            "closes": val[1],
+    graph = []
+    if url:
+        graph.append({
+            '@type': 'WebSite',
+            'url': url,
         })
-    if spec:
-        data["openingHoursSpecification"] = spec
-
-    areas = shop.get("service_area") or []
-    if areas:
-        data["areaServed"] = [
-            {"@type": "City", "name": a} for a in areas
-        ]
-
-    if shop.get("services"):
-        data["hasOfferCatalog"] = {
-            "@type": "OfferCatalog",
-            "name": "Services",
-            "itemListElement": [
-                {"@type": "Offer",
-                 "itemOffered": {"@type": "Service", "name": s["name"]}}
-                for s in shop["services"]
-            ],
+    business_id = (url + '#business') if url else None
+    business = {
+        '@type': shop.get('schema_type', 'AutoRepair'),
+        'name': shop['name'],
+        'telephone': tel_href(shop['phone']),
+    }
+    if business_id:
+        business['@id'] = business_id
+    if shop.get('about'):
+        business['description'] = shop['about']
+    addr = shop.get('address', {})
+    postal = {}
+    if addr.get('street'):
+        postal['streetAddress'] = addr['street']
+    if addr.get('zip'):
+        postal['postalCode'] = addr['zip']
+    if shop.get('city'):
+        postal['addressLocality'] = shop['city']
+    if shop.get('state'):
+        postal['addressRegion'] = shop['state']
+    if shop.get('country'):
+        postal['addressCountry'] = shop['country']
+    if postal:
+        postal['@type'] = 'PostalAddress'
+        business['address'] = postal
+    if shop.get('geo'):
+        business['geo'] = shop['geo']
+    if shop.get('maps_url'):
+        business['hasMap'] = shop['maps_url']
+    if shop.get('price_range'):
+        business['priceRange'] = shop['price_range']
+    if shop.get('hours'):
+        business['openingHoursSpecification'] = shop['hours']
+    if shop.get('service_area'):
+        business['areaServed'] = shop['service_area']
+    same_as = []
+    if shop.get('facebook_url'):
+        same_as.append(shop['facebook_url'])
+    for s in (shop.get('same_as') or []):
+        if isinstance(s, str) and (s.startswith('http://') or s.startswith('https://')):
+            same_as.append(s)
+    if same_as:
+        business['sameAs'] = same_as
+    ar = shop.get('aggregate_rating', {})
+    if ar and ar.get('enabled'):
+        business['aggregateRating'] = {
+            '@type': 'AggregateRating',
+            'ratingValue': ar['value'],
+            'reviewCount': ar['count'],
         }
-
-    rating = shop.get("aggregate_rating")
-    if rating and rating.get("enabled"):
-        data["aggregateRating"] = {
-            "@type": "AggregateRating",
-            "ratingValue": rating["value"],
-            "reviewCount": rating["count"],
+    services = shop.get('services') or []
+    if services:
+        offers = []
+        for svc in services:
+            item = {'@type': 'Service', 'name': svc['name']}
+            if svc.get('desc'):
+                item['description'] = svc['desc']
+            if business_id:
+                item['provider'] = {'@id': business_id}
+            offers.append({'@type': 'Offer', 'itemOffered': item})
+        business['hasOfferCatalog'] = {
+            '@type': 'OfferCatalog',
+            'itemListElement': offers,
         }
-
-    return json.dumps(data, indent=2)
-
-
+    graph.append(business)
+    return json.dumps({'@context': 'https://schema.org', '@graph': graph}, indent=2)
 # --------------------------------------------------------------------------
 # css
 # --------------------------------------------------------------------------
