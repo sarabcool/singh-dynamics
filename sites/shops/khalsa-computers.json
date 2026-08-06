@@ -1,0 +1,55 @@
+{
+  "_pilot_preview": true,
+  "_review_before_shipping": true,
+  "_verification_note": "Production domain is customer-owned. Street address and hours are intentionally omitted from the preview until the owner confirms they should be public.",
+  "slug": "khalsa-computers",
+  "name": "Khalsa Computers",
+  "city": "Novi",
+  "state": "MI",
+  "country": "US",
+  "phone": "(248) 615-9248",
+  "domain": "khalsacomputers.com",
+  "theme": "ice",
+  "schema_type": "ComputerStore",
+  "trade": "computer sales and service",
+  "tagline": "Computer Sales, Repair & Technology Services",
+  "headline": "Computer sales, repair, and technology services in Novi.",
+  "subhead": "Khalsa Computers provides computer equipment, assembly, repair, and website hosting services.",
+  "seo_title": "Khalsa Computers | Computer Sales & Repair in Novi, MI",
+  "seo_description": "Khalsa Computers in Novi, Michigan provides computer equipment, assembly, repair, and website hosting services. Call (248) 615-9248.",
+  "services_heading": "Computer and technology services",
+  "services": [
+    {
+      "name": "Computer equipment",
+      "desc": "Computer equipment and related technology products from a local Novi computer business."
+    },
+    {
+      "name": "Computer assembly",
+      "desc": "Computer assembly service for customers who need systems put together and configured."
+    },
+    {
+      "name": "Computer repair",
+      "desc": "Repair services for computer hardware and related technology issues."
+    },
+    {
+      "name": "Website hosting",
+      "desc": "Website hosting services for organizations and local customers."
+    }
+  ],
+  "about_heading": "About Khalsa Computers",
+  "about": "Khalsa Computers is a Novi, Michigan computer business offering computer equipment, assembly, repair, and technology services. Public web records also show Khalsa Computers providing website hosting for a local Michigan organization.",
+  "service_area": ["Novi"],
+  "address": {
+    "street": "",
+    "zip": ""
+  },
+  "hours": {},
+  "reviews": [],
+  "aggregate_rating": {
+    "enabled": false,
+    "value": "",
+    "count": ""
+  },
+  "cta_heading": "Talk to Khalsa Computers",
+  "cta_text": "Call to ask about computer equipment, assembly, repair, or technology services."
+}

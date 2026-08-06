@@ -3,13 +3,15 @@
  * Tier A: research, scoring refinement and preview generation only. Never sends.
  */
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { OFFER, offerContext } from './config/offer.mjs';
 
 const { ANTHROPIC_API_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, D1_DATABASE_ID, MAX_LEADS='15', MAX_COST_CENTS='150' } = process.env;
-if (!ANTHROPIC_API_KEY) { console.error('ANTHROPIC_API_KEY missing'); process.exit(1); }
-const RUN_MAX_LEADS = Math.min(Number(MAX_LEADS) || 8, 8);
+const PILOT_PREVIEW_SLUG = String(MAX_LEADS).startsWith('pilot:') ? String(MAX_LEADS).slice('pilot:'.length).trim() : null;
+if (!ANTHROPIC_API_KEY && !PILOT_PREVIEW_SLUG) { console.error('ANTHROPIC_API_KEY missing'); process.exit(1); }
+const parsedMaxLeads = Number(MAX_LEADS);
+const RUN_MAX_LEADS = PILOT_PREVIEW_SLUG ? 0 : Math.min(Number.isFinite(parsedMaxLeads) && parsedMaxLeads >= 0 ? parsedMaxLeads : 8, 8);
 const RUN_MAX_COST_CENTS = Math.min(Number(MAX_COST_CENTS) || 75, 75);
 const PREVIEW_PROJECT = 'sarabcool-singh-dynamics-previews';
 
@@ -94,9 +96,17 @@ Return exactly: {"still_operating":boolean,"disqualified":boolean,"disqualify_re
   }
 }
 
-if (generated > 0) {
-  console.log(`building and deploying ${generated} deterministic preview config(s)`);
-  execSync('python3 sites/build.py --generated-only --preview', { stdio: 'inherit' });
+let pilotPreviewUrl = null;
+if (generated > 0 || PILOT_PREVIEW_SLUG) {
+  if (PILOT_PREVIEW_SLUG) {
+    const configPath = `sites/shops/${PILOT_PREVIEW_SLUG}.json`;
+    if (!existsSync(configPath)) throw new Error(`pilot preview config not found: ${configPath}`);
+    console.log(`building zero-AI pilot preview: ${PILOT_PREVIEW_SLUG}`);
+    execSync(`python3 sites/build.py ${PILOT_PREVIEW_SLUG} --preview`, { stdio: 'inherit' });
+  } else {
+    console.log(`building and deploying ${generated} deterministic preview config(s)`);
+    execSync('python3 sites/build.py --generated-only --preview', { stdio: 'inherit' });
+  }
 
   const project = await ensurePagesProject(PREVIEW_PROJECT);
   const previewBaseUrl = project.subdomain.startsWith('http')
@@ -109,10 +119,15 @@ if (generated > 0) {
     { stdio: 'inherit', env: process.env }
   );
 
-  execSync('node agent/publish-previews.mjs', {
-    stdio: 'inherit',
-    env: { ...process.env, PREVIEW_BASE_URL: previewBaseUrl },
-  });
+  if (PILOT_PREVIEW_SLUG) {
+    pilotPreviewUrl = `${previewBaseUrl}/${encodeURIComponent(PILOT_PREVIEW_SLUG)}/`;
+    console.log(`pilot preview: ${pilotPreviewUrl}`);
+  } else {
+    execSync('node agent/publish-previews.mjs', {
+      stdio: 'inherit',
+      env: { ...process.env, PREVIEW_BASE_URL: previewBaseUrl },
+    });
+  }
 }
 
 await d1(`INSERT INTO runs (job,trigger,finished_at,ok,items_in,items_out,cost_cents,gh_run_url,summary) VALUES ('discover-leads',?,datetime('now'),1,?,?,?,?,?)`,[process.env.GITHUB_EVENT_NAME||'manual',leads.length,enriched,costCents,process.env.GITHUB_RUN_URL||null,`offer=${OFFER.id}; enriched ${enriched}/${leads.length}; generated ${generated} preview config(s) in ${Math.round((Date.now()-started)/1000)}s`]);
