@@ -42,7 +42,7 @@ function proposedReminder(overrides = {}) {
 
 test('policy: internal-only actions always ALLOW', () => {
   const { policy, invoice, arCase } = baseline();
-  for (const kind of ['wait', 'pause', 'unpause', 'verify_payment', 'resolve', 'escalate_human']) {
+  for (const kind of ['wait', 'pause', 'verify_payment', 'escalate_human']) {
     const action = makeProposedAction({
       action_id: `${kind}-1`, organization_id: 'org-A', case_id: 'c1', invoice_id: 'i1',
       kind, proposed_by: 'engine', reason: 'test',

@@ -27,9 +27,9 @@ test('idempotency: duplicate apply_action applied exactly once', () => {
   const runner = new EventRunner(baseSetup());
   runner.ingest([
     { kind: 'tick', at: '2026-08-15T09:00:00Z' },
-    { kind: 'apply_action', at: '2026-08-15T09:00:05Z', action_id: 'a-1', kind_applied: 'send_reminder' },
-    { kind: 'apply_action', at: '2026-08-15T09:00:06Z', action_id: 'a-1', kind_applied: 'send_reminder' },
-    { kind: 'apply_action', at: '2026-08-15T09:00:07Z', action_id: 'a-1', kind_applied: 'send_reminder' },
+    { kind: 'apply_action', at: '2026-08-15T09:00:05Z', action_id: 'case-idem:reminder:1', kind_applied: 'send_reminder' },
+    { kind: 'apply_action', at: '2026-08-15T09:00:06Z', action_id: 'case-idem:reminder:1', kind_applied: 'send_reminder' },
+    { kind: 'apply_action', at: '2026-08-15T09:00:07Z', action_id: 'case-idem:reminder:1', kind_applied: 'send_reminder' },
   ]);
   assert.equal(runner.case.reminder_stage, 1);
   assert.equal(runner.case.applied_action_ids.length, 1);
@@ -38,7 +38,7 @@ test('idempotency: duplicate apply_action applied exactly once', () => {
 test('idempotency: full replay is deterministic', () => {
   const events = [
     { kind: 'tick', at: '2026-08-15T09:00:00Z' },
-    { kind: 'apply_action', at: '2026-08-15T09:00:05Z', action_id: 'a-1', kind_applied: 'send_reminder' },
+    { kind: 'apply_action', at: '2026-08-15T09:00:05Z', action_id: 'case-idem:reminder:1', kind_applied: 'send_reminder' },
     { kind: 'source_snapshot', at: '2026-08-15T10:00:00Z',
       invoice: makeInvoiceSnapshot({
         organization_id: 'org-A', provider: 'quickbooks_online',

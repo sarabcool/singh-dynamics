@@ -127,7 +127,10 @@ export function allScenarios() {
     scenarios.push({ id: 9, title: 'payment plan request within bounded enabled policy -> ALLOW', policy,
       initialInvoice: invoiceFor(9, { due: '2026-08-04', balance: 300_000, synced_at: '2026-08-15T09:00:00Z' }),
       initialCase: caseFor(9, policy, { status: 'overdue', stage: 1, last_action_at: '2026-08-06T09:00:00Z' }),
-      events: [{ kind: 'tick', at: '2026-08-15T09:00:00Z' }],
+      events: [{ kind: 'reply', at: '2026-08-15T09:00:00Z',
+        reply: { intent: 'payment_plan_request', confidence: 0.95,
+          rationale: 'customer requested a bounded payment plan',
+          extracted_amounts_cents: [100_000, 200_000], original_message_ref: 'msg-9-a' } }],
       extraProposalCheck: {
         action: { action_id: 'plan-accept-9', organization_id: policy.organization_id,
           case_id: 'case-9', invoice_id: 'inv-9', kind: 'accept_payment_plan',
@@ -229,8 +232,8 @@ export function allScenarios() {
       initialInvoice: invoiceFor(19, { due: '2026-08-04', synced_at: '2026-08-15T09:00:00Z' }),
       initialCase: caseFor(19, policy, { status: 'overdue', stage: 0, last_action_at: null }),
       events: [{ kind: 'tick', at: '2026-08-15T09:00:00Z' },
-        { kind: 'apply_action', at: '2026-08-15T09:00:05Z', action_id: 'send-19-once', kind_applied: 'send_reminder' },
-        { kind: 'apply_action', at: '2026-08-15T09:00:06Z', action_id: 'send-19-once', kind_applied: 'send_reminder' }],
+        { kind: 'apply_action', at: '2026-08-15T09:00:05Z', action_id: 'case-19:reminder:1', kind_applied: 'send_reminder' },
+        { kind: 'apply_action', at: '2026-08-15T09:00:06Z', action_id: 'case-19:reminder:1', kind_applied: 'send_reminder' }],
       expect: { reminderStage: 1, appliedIdsCount: 1 } }); }
 
   { const policy = defaultPolicy();
