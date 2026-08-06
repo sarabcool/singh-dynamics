@@ -1,7 +1,8 @@
 name: deploy-khalsa-preview
 
 # Khalsa Computers is a hand-reviewed pilot with its own bespoke renderer.
-# Keep preview deploys deterministic and separate from lead enrichment / AI use.
+# This workflow intentionally avoids marketplace actions so it can still run
+# when GitHub's action-download service is degraded.
 on:
   push:
     branches: [main]
@@ -31,24 +32,30 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+      - name: Fetch repository without checkout action
+        env:
+          REPO: ${{ github.repository }}
+          REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git clone --depth 1 --branch "$REF" "https://github.com/$REPO.git" repo
 
       - name: Build private preview
+        working-directory: repo
         run: |
           python3 sites/build_khalsa.py --preview
           grep -q 'meta name="robots" content="noindex,nofollow"' sites/dist/khalsa-computers/index.html
           grep -q 'Computers, fixed. Systems, built.' sites/dist/khalsa-computers/index.html
+          node --version
+          npm --version
 
-      - name: Deploy preview
+      - name: Deploy preview to Cloudflare Pages
+        working-directory: repo
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
           npx --yes wrangler@latest pages deploy sites/dist \
             --project-name=sarabcool-singh-dynamics-previews \
-            --branch=main \
-            --commit-hash=${{ github.sha }}
+            --branch=main
