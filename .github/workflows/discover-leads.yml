@@ -49,6 +49,7 @@ jobs:
           CLOUDFLARE_API_TOKEN:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID:  ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID:         ${{ secrets.D1_DATABASE_ID }}
+          PREVIEW_BASE_URL:       ${{ vars.PREVIEW_BASE_URL }}
           MAX_LEADS:              ${{ github.event.inputs.max_leads || '15' }}
           MAX_COST_CENTS:         '150'
           GITHUB_RUN_URL:         ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
