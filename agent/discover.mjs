@@ -112,9 +112,14 @@ if (generated > 0 || PILOT_PREVIEW_SLUG) {
   }
 
   const project = await ensurePagesProject(PREVIEW_PROJECT);
-  const previewBaseUrl = project.subdomain.startsWith('http')
+  const pagesDevBaseUrl = project.subdomain.startsWith('http')
     ? project.subdomain
     : `https://${project.subdomain}`;
+  const configuredPreviewBaseUrl = (process.env.PREVIEW_BASE_URL || '').replace(/\/$/, '');
+  const previewBaseUrl = configuredPreviewBaseUrl || pagesDevBaseUrl;
+  if (!configuredPreviewBaseUrl) {
+    console.warn(`PREVIEW_BASE_URL missing; falling back to ${pagesDevBaseUrl}`);
+  }
 
   const commitHash = process.env.GITHUB_SHA ? ` --commit-hash=${process.env.GITHUB_SHA}` : '';
   execSync(
