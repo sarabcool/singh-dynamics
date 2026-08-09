@@ -39,6 +39,7 @@ jobs:
           RESEND_API_KEY:        ${{ secrets.RESEND_API_KEY }}
           WORKER_URL:            ${{ vars.WORKER_URL }}
           MAIL_FROM:             ${{ vars.MAIL_FROM }}
+          OPERATOR_TOKEN:        ${{ secrets.OPERATOR_TOKEN }}
           POSTAL_ADDRESS:        ${{ vars.POSTAL_ADDRESS }}
           # Empty until reply.singhdynamics.com is configured. The executor
           # falls back to the normal Singh Dynamics inbox when unset.
