@@ -56,6 +56,21 @@ Build simple websites for independent local businesses that do not already have 
 - The email pipeline is built and intentionally paused.
 - Messenger outreach must remain manual; no Messenger automation should be added.
 
+## Live infrastructure
+
+- `singhdynamics.com` is verified in Resend.
+- The production sender is `Sarab Singh <sarab@singhdynamics.com>` through the `MAIL_FROM` repository variable.
+- Lead previews are served at `previews.singhdynamics.com`, and the `PREVIEW_BASE_URL` repository variable is set.
+- Unsubscribe links use HMAC-signed tokens. `GET /unsubscribe` does not mutate state; this security fix has been verified in production.
+- `agent/lib/mail.mjs` enforces the CAN-SPAM footer and refuses to send prospect email without the required postal address and unsubscribe link.
+- Four offers are selectable through `OFFER_ID`: auto repair, HVAC, plumbing, and landscaping. Auto repair remains the active strategy; the existence of the other offers does not authorize HVAC or landscaping sweeps.
+
+## Open bugs
+
+- `agent/inquiry-received.mjs` has no deduplication guard for `approval_queue` inserts. Copy the existing guard pattern from `agent/publish-previews.mjs`.
+- `POST /intake` has no rate limit. Every request triggers `repository_dispatch` and can consume GitHub Actions minutes. Add Cloudflare Turnstile or an equivalently effective control; Turnstile is free.
+- `handleResendWebhook` discards every event except `email.received`, so bounce and complaint events are lost. Preserve and handle those events.
+
 ## Immediate priorities
 
 1. Add or strengthen independent website verification before any outreach. Record `verified_no_website`, `website_found`, or `uncertain` and preserve verification evidence.
@@ -74,3 +89,5 @@ Build simple websites for independent local businesses that do not already have 
 ## Update protocol
 
 When evidence, strategy, scope, or constraints change, update this document first in the same change that affects implementation or operations. ChatGPT, Claude, and human collaborators should read it before proposing or executing work. Do not silently override it in chat, prompts, code, or automation; record the change here, include the supporting evidence, and remove or revise superseded statements.
+
+Never open a draft pull request. Open pull requests as ready for review. Do not report work as complete until the change has been merged and its commit has been confirmed on `main`; a commit, pushed branch, or open pull request is still work in progress.
