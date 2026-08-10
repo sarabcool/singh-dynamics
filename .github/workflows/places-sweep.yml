@@ -10,6 +10,15 @@ on:
     - cron: '0 7 * * 0'
   workflow_dispatch:
     inputs:
+      offer_id:
+        description: 'Which offer to sweep. One vertical per run keeps Places spend predictable.'
+        type: choice
+        default: 'metro-detroit-auto-repair'
+        options:
+          - metro-detroit-auto-repair
+          - metro-detroit-hvac
+          - metro-detroit-plumbing
+          - metro-detroit-landscaping
       full:
         description: 'Sweep every configured town, not just the core set. Use sparingly.'
         type: boolean
@@ -51,6 +60,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
           MAX_SEARCHES:          ${{ github.event.inputs.max_searches || '40' }}
+          OFFER_ID:              ${{ github.event.inputs.offer_id || 'metro-detroit-auto-repair' }}
           GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node agent/sweep.mjs ${{ github.event.inputs.full == 'true' && '--full' || '' }}
       - name: Classify storefront vs residence
@@ -61,5 +71,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
           MAX_COST_CENTS:        ${{ github.event.inputs.max_cost_cents || '100' }}
+          OFFER_ID:              ${{ github.event.inputs.offer_id || 'metro-detroit-auto-repair' }}
           GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node agent/classify.mjs
