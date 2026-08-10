@@ -4,3 +4,10 @@ sites/dist/
 .wrangler/
 *.log
 .DS_Store
+
+# discover-leads commits from a runner that has just run sites/build.py.
+# Without this, every nightly enrichment run adds compiled bytecode to the
+# auto/lead-enrichment branch. See the 09 Aug 2026 branch, whose only content
+# was a stray build.cpython-312.pyc.
+__pycache__/
+*.py[cod]
