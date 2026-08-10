@@ -21,7 +21,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/unsubscribe') return handleUnsubscribe(url, env);
+    if (url.pathname === '/unsubscribe') return handleUnsubscribe(request, url, env);
     if (url.pathname === '/health') return json({ ok: true, ts: Date.now() });
 
     if (url.pathname === '/intake') {
@@ -254,10 +254,106 @@ async function checkUptime(env) {
   }));
 }
 
-async function handleUnsubscribe(url, env) {
-  const token = url.searchParams.get('t');
-  if (!token) return new Response('missing token', { status: 400 });
-  const lead = await env.DB.prepare(`SELECT id, email, phone, name FROM leads WHERE slug = ?`).bind(token).first();
+// Unsubscribe tokens are HMACs of the lead id, not slugs.
+//
+// The previous version looked the lead up by `slug`, which is guessable
+// ("khalsa-computers"), on a GET that mutated state. Two consequences, the
+// second far worse: anyone could opt out any lead by typing a business name
+// into a URL, and every link scanner that fetches URLs before a human sees
+// them (Outlook Safe Links, Gmail's proxy) would silently opt out every
+// prospect we mailed. The result would be zero replies with no visible cause.
+//
+// So: unguessable token, and GET never writes. Resend's one-click unsubscribe
+// already sends POST, so List-Unsubscribe-Post keeps working unchanged.
+const UNSUB_CONTEXT = 'unsub:v1:';
+
+function bytesToBase64Url(bytes) {
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Keyed on OPERATOR_TOKEN rather than a fourth secret. HMAC is one-way, so a
+// leaked unsubscribe link does not expose the operator token, and this avoids
+// another secret to rotate and keep in sync with the deploy workflow.
+async function unsubSignature(leadId, secret) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const digest = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(`${UNSUB_CONTEXT}${leadId}`),
+  );
+  return bytesToBase64Url(new Uint8Array(digest));
+}
+
+async function verifyUnsubToken(token, env) {
+  if (!env.OPERATOR_TOKEN || typeof token !== 'string') return null;
+  const dot = token.lastIndexOf('.');
+  if (dot <= 0) return null;
+  const idPart = token.slice(0, dot);
+  const provided = token.slice(dot + 1);
+  if (!/^[0-9]{1,15}$/.test(idPart)) return null;
+
+  const expected = await unsubSignature(idPart, env.OPERATOR_TOKEN);
+  if (expected.length !== provided.length) return null;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+  return diff === 0 ? Number(idPart) : null;
+}
+
+function unsubPage(heading, body, status = 200) {
+  const html = '<!doctype html><meta charset=utf-8>'
+    + '<meta name=viewport content="width=device-width,initial-scale=1">'
+    + '<title>Singh Dynamics</title>'
+    + '<style>body{font:16px/1.6 system-ui;max-width:32rem;margin:15vh auto;padding:0 1.5rem;color:#1a1a1a}'
+    + 'button{font:inherit;padding:.6rem 1.2rem;border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:6px;cursor:pointer}</style>'
+    + `<h1>${heading}</h1>${body}`;
+  return new Response(html, {
+    status,
+    headers: {
+      'content-type': 'text/html;charset=utf-8',
+      'cache-control': 'no-store',
+      'x-robots-tag': 'noindex, nofollow',
+      'referrer-policy': 'no-referrer',
+    },
+  });
+}
+
+async function handleUnsubscribe(request, url, env) {
+  if (request.method !== 'GET' && request.method !== 'POST') {
+    return new Response('method not allowed', { status: 405 });
+  }
+
+  const leadId = await verifyUnsubToken(url.searchParams.get('t') || '', env);
+
+  // Same response whether the token is malformed or simply unknown, so this
+  // endpoint cannot be used to test which lead ids exist.
+  if (leadId === null) {
+    return unsubPage(
+      'This link is not valid.',
+      '<p>If you got here from one of our emails, reply to it and we will remove you by hand.</p>',
+      400,
+    );
+  }
+
+  if (request.method === 'GET') {
+    return unsubPage(
+      'Unsubscribe',
+      '<p>Confirm and Singh Dynamics will not contact you again.</p>'
+        + '<form method="post"><button type="submit">Confirm unsubscribe</button></form>',
+    );
+  }
+
+  const lead = await env.DB.prepare(
+    `SELECT id, email, phone FROM leads WHERE id = ?`,
+  ).bind(leadId).first();
+
   if (lead) {
     await env.DB.batch([
       env.DB.prepare(`UPDATE leads SET opted_out=1, opted_out_at=datetime('now'), status='do_not_contact' WHERE id=?`).bind(lead.id),
@@ -265,7 +361,11 @@ async function handleUnsubscribe(url, env) {
       env.DB.prepare(`UPDATE approval_queue SET status='expired' WHERE lead_id=? AND status='pending'`).bind(lead.id),
     ]);
   }
-  return new Response(`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Unsubscribed</title><style>body{font:16px/1.6 system-ui;max-width:32rem;margin:15vh auto;padding:0 1.5rem;color:#1a1a1a}</style><h1>You're unsubscribed.</h1><p>You will not receive further email from Singh Dynamics.</p>`, { headers: { 'content-type': 'text/html;charset=utf-8' } });
+
+  return unsubPage(
+    "You're unsubscribed.",
+    '<p>You will not receive further email from Singh Dynamics.</p>',
+  );
 }
 
 async function renderDigest(env) {

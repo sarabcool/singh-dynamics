@@ -6,6 +6,7 @@
  * before this script may send prospect email.
  */
 
+import { createHmac } from 'node:crypto';
 import { d1, d1First, assertD1Env, logRun } from './lib/d1.mjs';
 import { sendInboundReply, sendProspect } from './lib/mail.mjs';
 
@@ -22,6 +23,22 @@ assertD1Env();
 if (!WORKER_URL && !DRY) {
   console.error('WORKER_URL not set. Cannot build unsubscribe links, refusing to send.');
   process.exit(1);
+}
+
+// Must match verifyUnsubToken() in infra/worker/index.js. The token is an HMAC
+// of the lead id so it cannot be guessed from the business name, which the old
+// slug-based link could be.
+const UNSUB_SECRET = process.env.OPERATOR_TOKEN || '';
+if (!UNSUB_SECRET && !DRY) {
+  console.error('OPERATOR_TOKEN not set. Cannot sign unsubscribe links, refusing to send.');
+  process.exit(1);
+}
+
+function unsubscribeUrlFor(leadId) {
+  const sig = createHmac('sha256', UNSUB_SECRET)
+    .update(`unsub:v1:${leadId}`)
+    .digest('base64url');
+  return `${WORKER_URL}/unsubscribe?t=${encodeURIComponent(`${leadId}.${sig}`)}`;
 }
 
 let ids;
@@ -127,7 +144,7 @@ for (const row of claimed) {
         subject: body.subject,
         html: body.html,
         replyTo,
-        unsubscribeUrl: `${WORKER_URL}/unsubscribe?t=${encodeURIComponent(lead.slug)}`,
+        unsubscribeUrl: unsubscribeUrlFor(lead.id),
       });
     }
 
