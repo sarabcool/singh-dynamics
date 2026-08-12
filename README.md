@@ -2,9 +2,11 @@
 
 Software and websites for small local businesses. Michigan.
 
-Two lines: static websites for businesses with no web presence (cash now), and
-invoice reconciliation software for small powersports shops (the long game,
-still unvalidated as of July 2026).
+Three parallel subchannels, none subordinate to the others: **Website Sales**
+(static websites and lead generation for local businesses, `docs/website-sales/`),
+**Singh AR** (B2B accounts-receivable agent, `docs/singh-ar/`), and **Website QC**
+(structural review for AI-generated websites, `docs/website-qc/`). Each has its
+own source-of-truth doc; read the relevant one before working on that subchannel.
 
 Read `CLAUDE.md` before touching anything. It is the operating constitution and
 it governs both human and autonomous sessions.
@@ -42,7 +44,10 @@ infra/schema.sql             D1 schema
 infra/worker/                Worker: cron, uptime, opt-out, approvals
 sites/build.py               static site generator for client sites
 sites/shops/*.json           one config per client site
-docs/                        architecture, authorization, glossary
+docs/website-sales/          Website Sales source of truth
+docs/singh-ar/                Singh AR source of truth
+docs/website-qc/              Website QC source of truth
+docs/                         shared: architecture, authorization, glossary
 .github/workflows/           the jobs that actually run
 ```
 

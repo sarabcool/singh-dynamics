@@ -12,51 +12,60 @@ Singh Dynamics builds autonomous back-office software that performs repetitive
 business work while deterministic policy gates keep real business decisions under
 human control.
 
-The primary product is now **Singh AR**: a B2B accounts-receivable operations
-agent. A customer connects QuickBooks Online and a business mailbox. Singh AR
-monitors unpaid invoices, performs routine follow-up, understands replies,
-records payment promises, verifies payment state, and escalates only decisions
-outside the customer's configured authority policy.
+Singh Dynamics runs **three parallel subchannels**, not a single product with
+legacy leftovers. None of the three is "the real business" with the others as
+side projects or history. Each has its own source-of-truth doc. Do not delete,
+deprioritize, or fold one into another without Sarab explicitly saying so.
 
-The detailed source of truth is `docs/singh-ar/`. Read those files before any
-Singh AR implementation work.
+### Subchannel 1: Website Sales
 
-Legacy website, lead-generation, and earlier invoice-product code stays in the
-repository as reusable infrastructure/history. Do not delete it merely because
-the primary product changed.
+Building and selling websites, plus lead generation, for local businesses (car
+detailing, computer repair, and similar shops). This is the original Singh
+Dynamics business.
 
-### Website QC workstream
+The source of truth is `docs/website-sales/README.md`. Read it before any
+Website Sales work.
 
-Singh Dynamics also has a validated Website QC workstream. Keep it in this
-repository. Do not create a separate repo unless a future independently deployed
-service genuinely needs a separate lifecycle.
+### Subchannel 2: Singh AR
 
-The source of truth is `docs/website-qc/README.md`. Read it before Website QC
-implementation or product-positioning work.
+A B2B accounts-receivable operations agent. A customer connects QuickBooks
+Online and a business mailbox. Singh AR monitors unpaid invoices, performs
+routine follow-up, understands replies, records payment promises, verifies
+payment state, and escalates only decisions outside the customer's configured
+authority policy.
 
-The validated V0 is **structural integrity and generator-artifact review for
-AI-generated websites**, not a broad AI visual-design or taste engine. Prioritize
-specific, checkable defects such as dead framework classes, fragile external
-assets, UI copy/handler mismatches, missing structural sections, dead or duplicate
-components, and uncontrolled failure states. Prefer small patches a skeptical
-reviewer can verify quickly. Do not patch subjective taste merely to produce a
-change.
-
-The real-repo gate produced six successful surgical patches across three public
-repos with clean builds, type checks, and no observed regressions, but all three
-working repos trace to Lovable-family output. Multi-platform breadth is therefore
-**unverified**. The next falsification pass must use a real non-trivial Bolt-only
-or v0-only repo before anyone claims the result generalizes beyond Lovable.
-
-Do not build Website QC auth, billing, SaaS tenancy, a dashboard, or unrelated
-infrastructure at this stage. Do not claim continuous monitoring is validated;
-the current evidence is one snapshot per repo. The immediate sequence is the
-cross-platform falsification pass, then the smallest reviewer harness inside the
-existing `agent/` structure if the result transfers.
+The source of truth is `docs/singh-ar/`. Read those files before any Singh AR
+implementation work.
 
 V1 is commercial B2B invoice workflow software, not consumer debt collection.
 Do not build consumer collections, legal threats, credit reporting, autonomous
 fee invention, debt purchasing, or money movement into V1.
+
+### Subchannel 3: Website QC
+
+A structural integrity and generator-artifact reviewer for AI-generated
+websites, not a broad AI visual-design or taste engine. Prioritize specific,
+checkable defects such as dead framework classes, fragile external assets, UI
+copy/handler mismatches, missing structural sections, dead or duplicate
+components, and uncontrolled failure states. Prefer small patches a skeptical
+reviewer can verify quickly. Do not patch subjective taste merely to produce a
+change.
+
+The source of truth is `docs/website-qc/README.md`. Read it before Website QC
+implementation or product-positioning work.
+
+Two independent real-repo validation passes are done (Lovable-family output,
+then Bolt.new), both successful, current decision is proceed to the smallest
+local reviewer harness. Do not build Website QC auth, billing, SaaS tenancy, a
+dashboard, or unrelated infrastructure at this stage. Do not claim continuous
+monitoring is validated; the current evidence is one snapshot per repo tested.
+
+### Shared infrastructure, not shared identity
+
+All three subchannels may reuse the same Cloudflare/D1/GitHub Actions stack
+where it genuinely fits. Reusing infrastructure does not make one subchannel
+subordinate to another, and a decision made for one subchannel's convenience
+must not silently constrain or deprioritize the other two.
 
 Every design decision must minimize ongoing operator work. A system that requires
 constant manual babysitting has failed the product goal.
@@ -183,23 +192,27 @@ concrete requirement that the existing stack cannot meet.
 
 ## Repo layout
 
+One repo, three subchannels, each with its own docs folder as source of truth.
+Shared infrastructure (`agent/`, `infra/`, `.github/workflows/`) is reused
+across subchannels where it fits; it is not owned by any one of them.
+
 ```
-agent/          Agent SDK harnesses invoked by GitHub Actions
+agent/                 Agent SDK harnesses invoked by GitHub Actions
 infra/
-  schema.sql    D1 schema
-  worker/       Cloudflare Worker, cron and dispatch
-sites/          Static site generator for client sites
-docs/           Architecture, authorization, glossary, decision log
+  schema.sql           D1 schema
+  worker/               Cloudflare Worker, cron and dispatch
+sites/                 Static site generator for client sites (Website Sales)
+site/                  Marketing site source (Website Sales)
+docs/
+  website-sales/        Website Sales scope, status, protocol (source of truth)
+  singh-ar/             Singh AR scope, architecture, policy engine (source of truth)
+  website-qc/           Website QC scope, evidence, validation protocol (source of truth)
+  (other docs)          Shared infra docs: authorization, DNS, API keys, glossary
 .github/workflows/
 ```
 
-Website QC remains part of this same layout:
-
-```
-docs/website-qc/    Website QC scope, evidence, validation protocol
-agent/               Future Website QC reviewer harness, after validation transfers
-.github/workflows/   Future repeatable review jobs when automation is justified
-```
+Website QC's reviewer harness, when implementation starts, lives in `agent/`
+alongside the other two subchannels' harnesses, not in a separate repo.
 
 ---
 
