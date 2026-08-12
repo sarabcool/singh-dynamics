@@ -25,6 +25,35 @@ Legacy website, lead-generation, and earlier invoice-product code stays in the
 repository as reusable infrastructure/history. Do not delete it merely because
 the primary product changed.
 
+### Website QC workstream
+
+Singh Dynamics also has a validated Website QC workstream. Keep it in this
+repository. Do not create a separate repo unless a future independently deployed
+service genuinely needs a separate lifecycle.
+
+The source of truth is `docs/website-qc/README.md`. Read it before Website QC
+implementation or product-positioning work.
+
+The validated V0 is **structural integrity and generator-artifact review for
+AI-generated websites**, not a broad AI visual-design or taste engine. Prioritize
+specific, checkable defects such as dead framework classes, fragile external
+assets, UI copy/handler mismatches, missing structural sections, dead or duplicate
+components, and uncontrolled failure states. Prefer small patches a skeptical
+reviewer can verify quickly. Do not patch subjective taste merely to produce a
+change.
+
+The real-repo gate produced six successful surgical patches across three public
+repos with clean builds, type checks, and no observed regressions, but all three
+working repos trace to Lovable-family output. Multi-platform breadth is therefore
+**unverified**. The next falsification pass must use a real non-trivial Bolt-only
+or v0-only repo before anyone claims the result generalizes beyond Lovable.
+
+Do not build Website QC auth, billing, SaaS tenancy, a dashboard, or unrelated
+infrastructure at this stage. Do not claim continuous monitoring is validated;
+the current evidence is one snapshot per repo. The immediate sequence is the
+cross-platform falsification pass, then the smallest reviewer harness inside the
+existing `agent/` structure if the result transfers.
+
 V1 is commercial B2B invoice workflow software, not consumer debt collection.
 Do not build consumer collections, legal threats, credit reporting, autonomous
 fee invention, debt purchasing, or money movement into V1.
@@ -162,6 +191,14 @@ infra/
 sites/          Static site generator for client sites
 docs/           Architecture, authorization, glossary, decision log
 .github/workflows/
+```
+
+Website QC remains part of this same layout:
+
+```
+docs/website-qc/    Website QC scope, evidence, validation protocol
+agent/               Future Website QC reviewer harness, after validation transfers
+.github/workflows/   Future repeatable review jobs when automation is justified
 ```
 
 ---
