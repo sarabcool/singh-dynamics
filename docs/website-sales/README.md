@@ -16,6 +16,7 @@ Local Michigan service businesses with no web presence or a broken one: auto sho
 
 ## Existing infrastructure
 
+- `site/sales/index.html`: this subchannel's own marketing site, served at `sales.singhdynamics.com`. Moved here from the repo-root `site/index.html` on 12 August 2026 when `singhdynamics.com` became a holding page for all three subchannels instead of this pitch directly. See `docs/MARKETING-SITES.md`.
 - `agent/discover.mjs`, `agent/sweep.mjs`, `agent/classify.mjs`: lead discovery and enrichment (Agent SDK, Tier A, runs unattended).
 - `sites/build.py`, `sites/shops/*.json`: static site generator, one config per client site.
 - `infra/worker/`: Cloudflare Worker, cron, uptime probes, opt-out handling, approval queue.
