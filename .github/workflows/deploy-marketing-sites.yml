@@ -1,0 +1,43 @@
+name: Deploy marketing sites
+
+# Deploys the four static marketing sites under site/ to their own Cloudflare
+# Pages projects. Each is a single static index.html, no build step.
+#
+# One-time manual step this workflow does NOT do: attaching the custom domain
+# to each Pages project in the Cloudflare dashboard. See docs/MARKETING-SITES.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/deploy-marketing-sites.yml"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - dir: site/root
+            project: singh-dynamics-root
+            domain: singhdynamics.com
+          - dir: site/sales
+            project: singh-dynamics-sales
+            domain: sales.singhdynamics.com
+          - dir: site/singhar
+            project: singh-dynamics-singhar
+            domain: singhar.singhdynamics.com
+          - dir: site/websiteqc
+            project: singh-dynamics-websiteqc
+            domain: websiteqc.singhdynamics.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy ${{ matrix.domain }} (${{ matrix.dir }}) to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy ${{ matrix.dir }} --project-name=${{ matrix.project }} --branch=main
