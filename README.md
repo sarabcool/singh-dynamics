@@ -44,9 +44,14 @@ infra/schema.sql             D1 schema
 infra/worker/                Worker: cron, uptime, opt-out, approvals
 sites/build.py               static site generator for client sites
 sites/shops/*.json           one config per client site
+site/root/                    singhdynamics.com, holding page linking the three
+site/sales/                   sales.singhdynamics.com, Website Sales pitch
+site/singhar/                 singhar.singhdynamics.com, Singh AR pitch
+site/websiteqc/               websiteqc.singhdynamics.com, Website QC pitch
 docs/website-sales/          Website Sales source of truth
 docs/singh-ar/                Singh AR source of truth
 docs/website-qc/              Website QC source of truth
+docs/MARKETING-SITES.md      how the four marketing sites deploy
 docs/                         shared: architecture, authorization, glossary
 .github/workflows/           the jobs that actually run
 ```

@@ -202,7 +202,10 @@ infra/
   schema.sql           D1 schema
   worker/               Cloudflare Worker, cron and dispatch
 sites/                 Static site generator for client sites (Website Sales)
-site/                  Marketing site source (Website Sales)
+site/root/             singhdynamics.com, holding page for all three subchannels
+site/sales/            sales.singhdynamics.com, Website Sales marketing site
+site/singhar/          singhar.singhdynamics.com, Singh AR marketing site
+site/websiteqc/        websiteqc.singhdynamics.com, Website QC marketing site
 docs/
   website-sales/        Website Sales scope, status, protocol (source of truth)
   singh-ar/             Singh AR scope, architecture, policy engine (source of truth)
