@@ -2,9 +2,11 @@
 
 ## Status
 
-**V0 decision: BUILD, with a narrow scope.**
+**V0 decision: BUILD, with a narrow scope. Cross-platform falsification pass (Bolt.new) complete: PROCEED TO V0 HARNESS.**
 
 This workstream belongs inside the existing Singh Dynamics repository. Do not create a separate repository unless a future implementation requires an independently deployable service with a genuinely separate lifecycle. The current evidence does not justify that split.
+
+See `FALSIFICATION-2026-08-12-bolt-huewave.md` for the full second-platform validation: repo, provenance proof, defects found, patches applied, build/type-check results, and the resulting decision. The summary is folded into this document below; the dated file is the full record.
 
 ## Product scope
 
@@ -52,15 +54,21 @@ Examples included:
 
 Two candidate issues were deliberately not patched because the evidence was not strong enough. This restraint is part of the product requirement, not a failure to find work.
 
+### Second platform: Bolt.new (`dmenchaca/huewave`)
+
+The cross-platform falsification pass this gate called for is complete. Tested `dmenchaca/huewave`, a real, non-trivial, live color palette generator (17 commits, working Supabase auth, deployed at huewave.co), with provenance verified from Bolt.new's own build artifacts (`.bolt/config.json`, `.bolt/prompt`), not README claims, and confirmed to carry zero Lovable dependency or history.
+
+Four patches performed, all removals of confirmed dead or unreachable code: a full orphaned Firebase integration left over from an earlier generation, a same-directory `index.ts`/`index.tsx` collision where the dead file was silently winning module resolution and bypassing the app's own dialog-state registration, three smaller dead/duplicate files, and two compiler-flagged unreachable `switch` cases. All four built cleanly, type-checked cleanly, and were verified live in a headless browser. One dev-server cache artifact came up mid-verification and is reported in full in the dated file rather than smoothed over; it was not a real regression. One hypothesized live bug (the dialog-registration gap enabling the spacebar shortcut to fire while a dialog was open) was tested directly and did not reproduce, a second independent guard already covered it; recorded as a falsified hypothesis, not a suppressed one.
+
+Full detail, including the rejected defect class (no fragile external images exist in this app) and the reasoning on what did and didn't transfer from the Lovable round, is in `FALSIFICATION-2026-08-12-bolt-huewave.md`.
+
 ## Hard limits from validation
 
-### Multi-platform breadth is unverified
+### Multi-platform breadth: Lovable and Bolt.new verified, v0 and Replit Agent still open
 
-Do not claim this generalizes to standalone Bolt.new, v0, or Replit Agent output yet. All three successful validation repos trace to Lovable.
+Two independent builders (Lovable, Bolt.new) now have real-repo evidence behind the same review approach: checkable-root-cause defects found, small surgical patches applied, clean build and type-check, live behavioral verification, honest reporting of what didn't hold up. Do not yet claim this covers v0 or Replit Agent specifically; their output shapes (v0's default Next.js App Router, Replit Agent's typical full-stack-with-own-server model) differ enough from the Vite-SPA shape both Lovable and Bolt produced that the claim needs its own evidence, not an extrapolation from two data points that happen to share a build tool.
 
-The next falsification pass must use at least one real, non-trivial **Bolt-only or v0-only** repository that is not a Lovable project merely mentioning another builder in its README or history.
-
-The pass succeeds only if Singh Dynamics can find at least two or three similarly concrete defects and produce similarly surgical, defensible patches.
+A future pass against v0-only or Replit-Agent-only output would extend breadth further but is not currently blocking the V0 harness decision below.
 
 ### Continuous monitoring is still a hypothesis
 
@@ -81,12 +89,12 @@ Do not create auth, billing, a dashboard, SaaS tenancy, or unrelated infrastruct
 
 ## Sequencing
 
-The next step is **not** a broad product build.
+Steps 1 and 2 are done. The next step is **not** a broad product build.
 
-1. Run the Bolt-only or v0-only falsification pass.
-2. Record defects, rejected candidates, patches, build/type-check results, screenshots, and regressions.
-3. If the result transfers, define the smallest local reviewer harness inside `agent/` that reproduces the proven manual workflow.
-4. Automate only after the manual process is repeated enough to expose a stable pattern, consistent with the repository's existing sequencing rule.
+1. ~~Run the Bolt-only or v0-only falsification pass.~~ Done 2026-08-12, see `FALSIFICATION-2026-08-12-bolt-huewave.md`. Result: transferred.
+2. ~~Record defects, rejected candidates, patches, build/type-check results, screenshots, and regressions.~~ Done, same file.
+3. **Current step.** Define the smallest local reviewer harness inside `agent/` that reproduces the proven manual workflow: locate a candidate repo, verify builder provenance from artifacts rather than claims, clone/install/build/render, find checkable-root-cause defects across the classes proven out in both validation passes, patch surgically, verify build/type-check/behavior, report honestly including rejected candidates and any falsified hypotheses. This is a harness that runs the same manual steps, not new product surface, no auth, billing, dashboard, SaaS tenancy, or continuous monitoring yet.
+4. Automate only after the manual process is repeated enough to expose a stable pattern, consistent with the repository's existing sequencing rule. Two runs (three Lovable repos, one Bolt repo) is not yet ten repetitions of the actual decision (what to patch, what to reject); the harness in step 3 should still route each finding through human review before automation is considered.
 
 ## Review standard
 
