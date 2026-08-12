@@ -1,6 +1,6 @@
 # Singh AR
 
-Singh AR is the first product of the new Singh Dynamics: software that handles routine business-to-business accounts receivable follow-up with a policy gateway between AI judgment and external action.
+Singh AR is one of Singh Dynamics's three parallel subchannels (alongside Website Sales and Website QC, see `CLAUDE.md`), not a replacement for the others: software that handles routine business-to-business accounts receivable follow-up with a policy gateway between AI judgment and external action.
 
 ## One-line product
 
@@ -34,7 +34,7 @@ Federal FDCPA rules generally focus on consumer debts rather than business debts
 - Existing CI and deployment pipeline.
 - Shared Agent Coordination Doc for Claude and ChatGPT handoffs.
 
-The old website and lead-generation code stays in the repo as legacy capability. Do not delete it during the pivot.
+The Website Sales code (`site/`, `sites/`, parts of `agent/`, `infra/worker/`) is a separate active subchannel, not legacy. Do not delete or deprioritize it; see `docs/website-sales/README.md`.
 
 ## Source-of-truth docs
 

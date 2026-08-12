@@ -8,7 +8,7 @@ Build the deterministic Singh AR core in isolation from real customer systems. T
 
 ## Required work
 
-1. Choose a clean module location for Singh AR without deleting legacy site/lead code. Prefer an isolated package/module with a clear boundary.
+1. Choose a clean module location for Singh AR without touching the separate, active Website Sales code. Prefer an isolated package/module with a clear boundary.
 2. Implement typed/validated domain objects for organization policy, invoice snapshot, AR case, inbound reply classification, proposed action, and policy result.
 3. Implement the AR case state transition engine.
 4. Implement the deterministic policy gateway from `POLICY-ENGINE.md`.
@@ -30,7 +30,7 @@ Build the deterministic Singh AR core in isolation from real customer systems. T
 - LLM output cannot grant authority.
 - No external messages.
 - No money movement.
-- No deletion of the legacy Singh Dynamics work.
+- No deletion of Website Sales code. It is a separate active subchannel, not legacy.
 - No consumer debt workflows.
 - No workflow-file edits unless needed for tests; if you edit `.github/workflows/*`, explicitly log why in the coordination doc.
 - Keep functions deterministic where possible. Time must be injectable/fakeable for tests.
