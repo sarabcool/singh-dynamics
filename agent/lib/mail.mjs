@@ -20,7 +20,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // Must be on a domain verified in Resend. Until singhdynamics.com is verified
 // there, sends will fail with a 403 and the reason will be in the response body.
 export const MAIL_FROM =
-  process.env.MAIL_FROM || 'Singh Dynamics <hello@singhdynamics.com>';
+  process.env.MAIL_FROM || 'Singh Dynamics <sarab@singhdynamics.com>';
 
 export const OPERATOR_TO =
   process.env.OPERATOR_TO || 'khalsasarab3@gmail.com';
