@@ -2,15 +2,13 @@ name: Deploy marketing sites
 
 # Deploys the four static marketing sites under site/ to their own Cloudflare
 # Pages projects. Each is a single static index.html, no build step.
-#
-# One-time manual step this workflow does NOT do: attaching the custom domain
-# to each Pages project in the Cloudflare dashboard. See docs/MARKETING-SITES.md.
 
 on:
   push:
     branches: [main]
     paths:
       - "site/**"
+      - "tools/make-og-images.mjs"
       - ".github/workflows/deploy-marketing-sites.yml"
   workflow_dispatch: {}
 
@@ -34,6 +32,8 @@ jobs:
             domain: websiteqc.singhdynamics.com
     steps:
       - uses: actions/checkout@v4
+      - name: Copy shared brand CSS into deploy folder
+        run: cp site/_shared/brand.css "${{ matrix.dir }}/brand.css"
       - name: Render the og:image cards
         run: npm install --no-save playwright && npx playwright install --with-deps chromium && node tools/make-og-images.mjs
       - name: Deploy ${{ matrix.domain }} (${{ matrix.dir }}) to Cloudflare Pages
