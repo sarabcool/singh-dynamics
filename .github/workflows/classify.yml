@@ -21,8 +21,8 @@ name: classify
 # daily is safe and idempotent. On a day with nothing to do it queries once,
 # writes a `runs` row saying so, and exits having spent nothing.
 on:
-  schedule:
-    - cron: '0 9 * * *'   # 05:00 ET daily, drains whatever the sweep left behind
+  # schedule:
+    # - cron: '0 9 * * *'   # 05:00 ET daily, drains whatever the sweep left behind
   workflow_dispatch:
     inputs:
       vertical:
