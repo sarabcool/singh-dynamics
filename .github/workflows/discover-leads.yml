@@ -8,8 +8,8 @@ name: discover-leads
 on:
   repository_dispatch:
     types: [discover-leads]
-  schedule:
-    - cron: '30 7 * * *'   # 03:30 ET, 30 min after the Worker's attempt
+  # schedule:
+    # - cron: '30 7 * * *'   # 03:30 ET, 30 min after the Worker's attempt
   workflow_dispatch:
     inputs:
       max_leads:
