@@ -1,0 +1,80 @@
+/* ========================================================================== 
+   Singh Dynamics brand foundation.
+
+   One source of truth for tokens and primitives, copied into each site folder
+   at deploy time. Everything here is what the four sites SHARE: neutrals,
+   type scale, grid, rules, focus states, motion policy.
+
+   Everything that makes a site look like itself lives in that site's own
+   <style> block. Deliberately: a shared system is not a shared template. If a
+   layout component ends up here, all four pages start converging again, which
+   is the exact failure this redesign exists to correct.
+   ========================================================================== */
+
+:root {
+  --canvas: #F4F2ED;
+  --canvas-deep: #EAE7DE;
+  --paper: #FCFBF8;
+  --ink: #111315;
+  --ink-2: #33393E;
+  --muted: #687078;
+  --rule: #D9D4C8;
+  --rule-soft: #E6E2D8;
+  --sd: #2457FF;
+  --accent: var(--sd);
+  --accent-ink: #FFFFFF;
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --t-display: clamp(2.6rem, 7.2vw, 5.4rem);
+  --t-h1: clamp(2.1rem, 5.4vw, 3.9rem);
+  --t-h2: clamp(1.5rem, 3.1vw, 2.3rem);
+  --t-h3: clamp(1.08rem, 1.5vw, 1.28rem);
+  --t-body: clamp(1rem, 1.05vw, 1.09rem);
+  --t-small: .875rem;
+  --t-micro: .75rem;
+  --shell: min(1180px, 92vw);
+  --shell-n: min(880px, 92vw);
+  --s1: .5rem;
+  --s2: .875rem;
+  --s3: 1.5rem;
+  --s4: 2.5rem;
+  --s5: 4rem;
+  --s6: clamp(4.5rem, 9vw, 8rem);
+  --ease: cubic-bezier(.4, .1, .2, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font-body); font-size: var(--t-body); line-height: 1.62; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-wrap: break-word; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; line-height: 1.04; letter-spacing: -.028em; margin: 0; text-wrap: balance; }
+h1 { font-size: var(--t-h1); }
+h2 { font-size: var(--t-h2); }
+h3 { font-size: var(--t-h3); letter-spacing: -.014em; line-height: 1.25; }
+p { margin: 0; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+.shell { width: var(--shell); margin-inline: auto; }
+.shell-n { width: var(--shell-n); margin-inline: auto; }
+.lede { font-size: clamp(1.06rem, 1.7vw, 1.32rem); line-height: 1.55; color: var(--ink-2); }
+.muted { color: var(--muted); }
+.small { font-size: var(--t-small); }
+.tag { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: .06em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.btn { display: inline-flex; align-items: center; gap: .6em; background: var(--ink); color: var(--canvas); font-family: var(--font-display); font-weight: 550; font-size: 1rem; letter-spacing: -.01em; padding: .82em 1.5em; border: 0; border-radius: 3px; cursor: pointer; transition: background .18s var(--ease), transform .18s var(--ease); }
+.btn:hover { background: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.link { display: inline-flex; align-items: center; gap: .5em; font-weight: 500; color: var(--ink); padding-bottom: 2px; background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-position: 0 100%; background-size: 0% 1.5px; transition: background-size .28s var(--ease), color .18s var(--ease); }
+.link:hover { background-size: 100% 1.5px; color: var(--accent); }
+.link svg { transition: transform .28s var(--ease); }
+.link:hover svg { transform: translateX(4px); }
+.rule { border: 0; border-top: 1px solid var(--rule); margin: 0; }
+.lockup { display: inline-flex; align-items: center; gap: .68rem; }
+.lockup svg { flex: none; }
+.lockup-name { font-family: var(--font-display); font-weight: 600; font-size: 1.02rem; letter-spacing: -.022em; line-height: 1.1; }
+.foot { padding: var(--s4) 0 var(--s5); border-top: 1px solid var(--rule); }
+.foot-in { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s4); align-items: baseline; justify-content: space-between; font-size: var(--t-small); color: var(--muted); }
+.foot a:hover { color: var(--accent); }
+.foot-fam { display: flex; flex-wrap: wrap; gap: 1.1rem; }
+.rise { opacity: 0; transform: translateY(14px); animation: rise .7s var(--ease) forwards; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; opacity: 1; transform: none; } *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
