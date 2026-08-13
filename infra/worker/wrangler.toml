@@ -42,7 +42,7 @@ enabled = true
 # an hour across DST. Acceptable for a nightly batch, not worth fixing.
 [triggers]
 crons = [
-  "0 7 * * *",    # 03:00 ET, nightly enrichment of unscored leads
+  # "0 7 * * *",    # 03:00 ET, nightly enrichment of unscored leads
   "0 12 * * *",   # 08:00 ET, build the daily approval digest
   "15 * * * *",   # hourly, uptime sweep of live client sites
 ]
