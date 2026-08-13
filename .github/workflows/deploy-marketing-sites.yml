@@ -34,7 +34,8 @@ jobs:
             domain: websiteqc.singhdynamics.com
     steps:
       - uses: actions/checkout@v4
-
+      - name: Render the og:image cards
+              run: npm install --no-save playwright && npx playwright install --with-deps chromium && node tools/make-og-images.mjs
       - name: Deploy ${{ matrix.domain }} (${{ matrix.dir }}) to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
