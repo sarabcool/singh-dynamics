@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Singh Dynamics</title>
-<meta name="description" content="Singh Dynamics builds software that removes repeat work from small businesses. Three products: Website Sales, Singh AR, and Website QC.">
+<meta name="description" content="Singh Dynamics builds software for the work that repeats. Three products, out of Novi, Michigan: Websites, Singh AR, and Website QC.">
 <link rel="canonical" href="https://singhdynamics.com/">
-<meta name="theme-color" content="#F4F2ED">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%232457FF'/%3E%3Cpath d='M23 11H13.2v4.2H23V21h-9.8' stroke='%23F4F2ED' stroke-width='3.6' fill='none'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#EFEDE8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%231F3CFF'/%3E%3Cpath d='M23 11H13.2v4.2H23V21h-9.8' stroke='%23EFEDE8' stroke-width='3.6' fill='none'/%3E%3C/svg%3E">
 
 <meta property="og:title" content="Singh Dynamics">
-<meta property="og:description" content="We build systems that remove work.">
+<meta property="og:description" content="Nobody should have to do this twice.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://singhdynamics.com/">
 <meta property="og:image" content="https://singhdynamics.com/og-image.png">
@@ -18,101 +18,191 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="brand.css">
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"Singh Dynamics",
-"description":"Software that removes repeat work from small businesses.",
+"description":"Software for the work that repeats.",
 "url":"https://singhdynamics.com/","email":"sarab@singhdynamics.com",
 "address":{"@type":"PostalAddress","addressLocality":"Novi","addressRegion":"MI","addressCountry":"US"}}
 </script>
 
 <style>
-.top { padding: 1.6rem 0; }
-.top-in { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.top .link { font-size: var(--t-small); }
+/* ==========================================================================
+   singhdynamics.com. The parent owns cobalt. Every statement on this page is
+   set in it and nothing else is, which is the whole colour system.
 
-.hero { padding: clamp(2.5rem, 6vw, 5rem) 0 clamp(2rem, 4vw, 3.5rem); position: relative; }
-.hero-grid { display: grid; grid-template-columns: 1fr; gap: var(--s5); align-items: end; }
-.hero h1 { font-size: var(--t-display); font-weight: 600; letter-spacing: -.04em; max-width: 12ch; }
-.hero h1 em { font-style: normal; color: var(--accent); }
-.hero-sub { margin-top: var(--s3); max-width: 46ch; }
-.hero-meta { margin-top: var(--s4); display: flex; flex-wrap: wrap; gap: .6rem 1.4rem; align-items: baseline; }
-.device { justify-self: end; width: 100%; max-width: 460px; color: var(--accent); margin-right: calc(-1 * max(0px, (100vw - var(--shell)) / 2)); }
-.device svg { width: 100%; height: auto; }
+   The three products carry their own colours here only as a hairline rule
+   and a label, so the hub still reads as one colour while the family stays
+   legible at a glance.
+   ========================================================================== */
 
-.sec { padding: var(--s6) 0 0; }
-.sec-head { display: flex; align-items: baseline; gap: 1rem; padding-bottom: var(--s3); }
-.sec-head h2 { font-size: var(--t-h3); font-weight: 600; letter-spacing: -.01em; }
+:root { --own: #1F3CFF; --canvas: #EFEDE8; }
 
-.idx { display: grid; gap: 0; }
-.row-open { display: grid; grid-template-columns: 1fr; gap: var(--s3); padding: var(--s4) 0; border-top: 1px solid var(--rule); align-items: start; }
-.row-open:hover .row-name { color: var(--accent-row); }
-.row-name { font-family: var(--font-display); font-size: clamp(1.7rem,3.4vw,2.5rem); font-weight: 600; letter-spacing: -.03em; transition: color .18s var(--ease); }
-.row-desc { color: var(--ink-2); max-width: 52ch; }
-.row-foot { display: flex; align-items: center; gap: .9rem; margin-top: var(--s2); }
+/* --- The mark, drawn once, very large, very faint. Behind the opening
+       statement rather than beside it. ------------------------------------ */
 
-.feat { background: var(--paper); border: 0; border-top: 3px solid var(--accent-row); padding: clamp(1.6rem, 3.4vw, 2.8rem); margin: var(--s4) 0; display: grid; gap: var(--s4); }
-.feat-name { font-family: var(--font-display); font-size: clamp(2rem,4.4vw,3.1rem); font-weight: 600; letter-spacing: -.035em; }
-.feat-desc { color: var(--ink-2); max-width: 46ch; }
-.mini { display: grid; gap: .55rem; align-content: center; }
-.mini-step { display: flex; align-items: center; gap: .6rem; font-size: var(--t-small); color: var(--ink-2); }
-.mini-dot { width: 7px; height: 7px; background: var(--accent-row); flex: none; }
-.mini-rule { height: 14px; width: 1px; background: var(--rule); margin-left: 3px; }
-.mini-gate { color: var(--accent-row); font-family: var(--font-mono); font-size: var(--t-micro); }
-
-.row-tight { display: grid; grid-template-columns: 1fr; gap: var(--s2); padding: var(--s4) 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
-.qc-anno { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--muted); display: flex; gap: 1.2rem; flex-wrap: wrap; }
-.qc-anno b { font-weight: 400; color: var(--accent-row); }
-.row-aside { display: grid; gap: .75rem; }
-.glyph-frame { width: 100%; max-width: 190px; color: var(--accent-row); }
-.qc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; max-width: 190px; }
-.qc-grid i { height: 26px; background: var(--rule); display: block; }
-.qc-grid i.fixed { background: var(--accent-row); height: 26px; box-shadow: 0 0 0 1px var(--accent-row), 4px 4px 0 -1px rgba(82,55,184,.22); }
-
-.close { margin-top: var(--s6); background: var(--ink); color: var(--canvas); }
-.close-in { padding: var(--s5) 0; display: flex; flex-wrap: wrap; gap: var(--s3) var(--s4); align-items: baseline; justify-content: space-between; }
-.close h2 { color: var(--canvas); font-size: var(--t-h2); max-width: 18ch; }
-.close a { color: var(--canvas); }
-.close .mailto { font-family: var(--font-display); font-size: clamp(1.1rem,2.2vw,1.5rem); font-weight: 500; letter-spacing: -.02em; background-image: linear-gradient(#7A9BFF,#7A9BFF); background-repeat: no-repeat; background-position: 0 100%; background-size: 100% 1.5px; padding-bottom: 3px; }
-.close .mailto:hover { color: #A8BEFF; }
-
-@media (min-width: 760px) {
-  .hero-grid { grid-template-columns: 1.35fr .85fr; }
-  .row-open { grid-template-columns: 1fr 22ch; gap: var(--s4); align-items: baseline; }
-  .row-tight { grid-template-columns: 1fr 22ch; gap: var(--s4); align-items: baseline; }
-  .feat { grid-template-columns: 1.25fr .75fr; align-items: center; }
+.opening { position: relative; isolation: isolate; }
+.geo {
+  position: absolute; z-index: -1; inset: 0;
+  display: grid; place-items: center; pointer-events: none;
 }
-@media (max-width: 759px) {
-  .device { max-width: 260px; justify-self: start; margin-right: 0; }
+.geo svg { width: min(58vw, 620px); height: auto; color: var(--own); opacity: .075; }
+.geo path { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: draw 3.4s var(--ease-out) .4s forwards; }
+.geo path:nth-child(2) { animation-delay: 1.1s; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .geo path { stroke-dashoffset: 0; animation: none; } }
+
+.cue { margin-top: var(--s6); display: grid; justify-items: center; gap: .8rem; }
+.cue i { display: block; width: 1px; height: 44px; background: var(--rule); }
+
+/* --- Products. Three screens, each one product, nothing else in frame. --- */
+
+.product { position: relative; }
+.product .mark { width: 46px; height: 2px; background: var(--pc); margin-bottom: var(--s4); }
+.product .label.pc { color: var(--pc); }
+.product h2 {
+  font-size: clamp(2.2rem, 7vw, 6.2rem);
+  color: var(--ink); letter-spacing: -.025em; margin-top: .6rem;
 }
+.product .sentence { margin-top: var(--s4); color: var(--ink-2); }
+.product .go { margin-top: var(--s5); }
+.product .go .link { color: var(--pc); font-size: var(--t-small); letter-spacing: .04em; }
+
+/* --- Stance. Three short lines, spaced like paragraphs of silence. ------- */
+
+.stance { display: grid; gap: var(--s6); justify-items: center; }
+.stance .line { display: grid; gap: var(--s2); justify-items: center; }
+.stance .line p { max-width: 40ch; color: var(--ink-2); }
+
+/* --- Contact ------------------------------------------------------------- */
+
+.contact .mail {
+  margin-top: var(--s5);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 60;
+  font-size: clamp(1.15rem, 3.2vw, 2.2rem); letter-spacing: -.015em;
+  color: var(--own);
+  background-image: linear-gradient(var(--own), var(--own));
+  background-repeat: no-repeat; background-position: 0 100%; background-size: 100% 1px;
+  padding-bottom: .1em; display: inline-block;
+}
+.contact .mail:hover { background-size: 0% 1px; }
 </style>
 </head>
 <body>
-<header class="top"><div class="shell top-in">
-<a class="lockup" href="/" aria-label="Singh Dynamics home"><svg width="26" height="26" viewBox="0 0 32 32" role="img" aria-label="Singh Dynamics mark"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#2457FF"/><path d="M23 11H13.2v4.2H23V21h-9.8" stroke="#F4F2ED" stroke-width="3.6" fill="none"/></svg><span class="lockup-name">Singh Dynamics</span></a>
-<a class="link" href="#contact">Contact</a>
-</div></header>
+
+<header class="shell bar">
+  <a class="lockup" href="/" aria-label="Singh Dynamics, home">
+    <svg width="20" height="20" viewBox="0 0 32 32" role="img" aria-label="Singh Dynamics mark">
+      <path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#1F3CFF"/>
+      <path d="M23 11H13.2v4.2H23V21h-9.8" stroke="#EFEDE8" stroke-width="3.6" fill="none"/>
+    </svg>
+    <span class="lockup-name">Singh&nbsp;Dynamics</span>
+  </a>
+  <span class="label mid">Novi, Michigan</span>
+  <a class="label link" href="#contact">Contact</a>
+</header>
 
 <main>
-<section class="hero"><div class="shell hero-grid">
-<div class="rise"><h1>We build systems that <em>remove work</em>.</h1><p class="lede hero-sub">Singh Dynamics develops software and digital systems for small businesses. Each product takes one repetitive job and does it without supervision, escalating only the decisions a person should actually make.</p><div class="hero-meta"><span class="tag">Novi, Michigan</span><span class="tag">Three active products</span></div></div>
-<div class="device" aria-hidden="true"><svg viewBox="0 0 380 300" fill="none" preserveAspectRatio="xMinYMid meet"><path d="M20 20h150a120 120 0 0 1 120 120v20a120 120 0 0 1-120 120H20z" stroke="currentColor" stroke-width="1.25" opacity=".38"/><path d="M380 96H128v48h252v52H128" stroke="currentColor" stroke-width="2.25"/><rect x="20" y="96" width="11" height="152" fill="currentColor"/></svg></div>
-</div></section>
 
-<section class="sec" id="products"><div class="shell"><div class="sec-head"><span class="tag">01</span><h2>What we run</h2></div><div class="idx">
-<a class="row-open" href="https://sales.singhdynamics.com/" style="--accent-row:#2457FF"><span><span class="row-name">Website Sales</span><p class="row-desc">Fast, simple websites for Michigan small businesses that do not have one, or have one that is costing them work. We build it first, then ask for anything.</p><span class="row-foot"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#2457FF"/><path d="M9 11.4h15" stroke="#FCFBF8" stroke-width="3.2"/><path d="M13.2 22.2l4.4-4.6 4.4 4.6" stroke="#FCFBF8" stroke-width="3.2" fill="none"/></svg><span class="link">sales.singhdynamics.com <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M9 1l4 4-4 4M13 5H0" stroke="currentColor" stroke-width="1.6"/></svg></span></span></span><span class="row-aside"><svg viewBox="0 0 160 104" fill="none" aria-hidden="true" class="glyph-frame"><rect x=".75" y=".75" width="158.5" height="102.5" stroke="currentColor" stroke-width="1.5" opacity=".45"/><path d="M0 22h160" stroke="currentColor" stroke-width="1.5" opacity=".45"/><circle cx="12" cy="11" r="2.5" fill="currentColor" opacity=".45"/><rect x="16" y="38" width="74" height="9" fill="currentColor"/><rect x="16" y="55" width="112" height="5" fill="currentColor" opacity=".3"/><rect x="16" y="66" width="96" height="5" fill="currentColor" opacity=".3"/><rect x="16" y="82" width="46" height="12" fill="currentColor"/></svg><span class="small muted">Auto repair, HVAC, plumbing, landscaping.</span></span></a>
+<!-- ===================== OPENING ===================== -->
+<section class="screen opening">
+  <div class="geo" aria-hidden="true">
+    <svg viewBox="0 0 420 420" fill="none">
+      <path d="M40 24h150a130 130 0 0 1 130 130v112a130 130 0 0 1-130 130H40z" stroke="currentColor" stroke-width="2"/>
+      <path d="M420 150H190v56h230v64H190" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  </div>
 
-<a class="feat" href="https://singhar.singhdynamics.com/" style="--accent-row:#0F6B57"><div><div class="feat-name">Singh AR</div><p class="feat-desc lede" style="margin-top:.8rem">Accounts receivable follow-up that runs itself. It watches open invoices in QuickBooks, chases them from your own mailbox, reads the replies, and stops at anything that changes business terms.</p><span class="row-foot"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#0F6B57"/><path d="M23 11H13.2v4.2H23V21h-4.4" stroke="#FCFBF8" stroke-width="3.6" fill="none"/><rect x="11.4" y="19.2" width="5.4" height="5.4" fill="#FCFBF8"/></svg><span class="link">singhar.singhdynamics.com <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M9 1l4 4-4 4M13 5H0" stroke="currentColor" stroke-width="1.6"/></svg></span></span></div><div class="mini" aria-hidden="true"><span class="mini-step"><i class="mini-dot"></i> Invoice goes overdue</span><span class="mini-rule"></span><span class="mini-step"><i class="mini-dot"></i> Follow-up sends itself</span><span class="mini-rule"></span><span class="mini-step"><i class="mini-dot"></i> Reply is read</span><span class="mini-rule"></span><span class="mini-step mini-gate">policy gate &rarr; you decide</span></div></a>
+  <h1 class="statement" data-rise>Nobody should have to do this twice.</h1>
 
-<a class="row-tight" href="https://websiteqc.singhdynamics.com/" style="--accent-row:#5237B8"><span><span class="row-name">Website QC</span><p class="row-desc">A structural reviewer for AI-generated websites. It reads the code and the rendered page, finds the defects the generator left behind, and explains why each one matters.</p><span class="qc-anno" style="margin-top:.9rem"><span><b>01</b> repetition</span><span><b>02</b> dead classes</span><span><b>03</b> broken assets</span><span><b>04</b> missing structure</span></span><span class="row-foot"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#5237B8"/><path d="M23 11H13.2v4.2H20" stroke="#FCFBF8" stroke-width="3.6" fill="none" opacity=".42"/><path d="M23 21h-9.8" stroke="#FCFBF8" stroke-width="3.6"/><path d="M20 15.2h3" stroke="#FCFBF8" stroke-width="3.6"/></svg><span class="link">websiteqc.singhdynamics.com <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M9 1l4 4-4 4M13 5H0" stroke="currentColor" stroke-width="1.6"/></svg></span></span></span><span class="row-aside"><span class="qc-grid" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="fixed"></i></span><span class="small muted">In validation, against real public repositories.</span></span></a>
-</div></div></section>
+  <div class="cue" data-rise style="--d:900ms">
+    <i></i>
+    <span class="label">Scroll</span>
+  </div>
+</section>
+
+<!-- ===================== WHAT THIS IS ===================== -->
+<section class="screen">
+  <p class="sentence" data-rise>Singh&nbsp;Dynamics builds software for the work that repeats.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise style="--d:120ms">Three products. Each one takes a single job off a small business and hands back only the decisions a person should actually be making.</p>
+</section>
+
+<!-- ===================== PRODUCTS ===================== -->
+<div id="products">
+
+  <section class="screen product" style="--pc:#C4402A">
+    <span class="mark" aria-hidden="true"></span>
+    <span class="label pc">Product 01</span>
+    <h2>Websites</h2>
+    <p class="sentence">Plain, fast websites for shops and trades. We build the whole thing before you pay anything.</p>
+    <p class="go"><a class="link" href="https://sales.singhdynamics.com/">sales.singhdynamics.com</a></p>
+  </section>
+
+  <section class="screen product" style="--pc:#0B5C4A">
+    <span class="mark" aria-hidden="true"></span>
+    <span class="label pc">Product 02</span>
+    <h2>Singh AR</h2>
+    <p class="sentence">Invoice follow-up that runs without you, and stops cold at anything that changes what is owed.</p>
+    <p class="go"><a class="link" href="https://singhar.singhdynamics.com/">singhar.singhdynamics.com</a></p>
+  </section>
+
+  <section class="screen product" style="--pc:#5B34E8">
+    <span class="mark" aria-hidden="true"></span>
+    <span class="label pc">Product 03</span>
+    <h2>Website QC</h2>
+    <p class="sentence">A structural review of the site your AI builder generated, and what it left behind.</p>
+    <p class="go"><a class="link" href="https://websiteqc.singhdynamics.com/">websiteqc.singhdynamics.com</a></p>
+  </section>
+
+</div>
+
+<!-- ===================== STANCE ===================== -->
+<section class="screen">
+  <p class="statement wide" data-rise>We only build things we would run on our own business.</p>
+</section>
+
+<section class="pad shell-n">
+  <div class="stance">
+    <div class="line" data-rise>
+      <span class="label own">01</span>
+      <p class="sentence">Boring beats clever.</p>
+      <p>If a job is the same every week, it should not need a person every week. That is the whole filter.</p>
+    </div>
+    <div class="line" data-rise>
+      <span class="label own">02</span>
+      <p class="sentence">Automate routine, gate exceptions.</p>
+      <p>The moment something changes money, terms, or a relationship, the software stops and asks a person.</p>
+    </div>
+    <div class="line" data-rise>
+      <span class="label own">03</span>
+      <p class="sentence">Say what it does not do.</p>
+      <p>Every product page here states its limits in the same size type as its features. Anything in development says so.</p>
+    </div>
+  </div>
+</section>
+
 </main>
 
-<section class="close" id="contact"><div class="shell close-in"><h2>Have a repetitive job that should not need a person?</h2><a class="mailto" href="mailto:sarab@singhdynamics.com">sarab@singhdynamics.com</a></div></section>
-<footer class="foot"><div class="shell foot-in"><span>© 2026 Singh Dynamics · Novi, Michigan</span><span class="foot-fam"><a href="https://sales.singhdynamics.com/">Website Sales</a><a href="https://singhar.singhdynamics.com/">Singh AR</a><a href="https://websiteqc.singhdynamics.com/">Website QC</a></span></div></footer>
+<!-- ===================== CONTACT ===================== -->
+<section class="screen contact" id="contact">
+  <p class="statement" data-rise>Got a job that keeps coming back?</p>
+  <a class="mail" href="mailto:sarab@singhdynamics.com" data-rise style="--d:150ms">sarab@singhdynamics.com</a>
+  <p class="label" style="margin-top:var(--s4)" data-rise>Novi, Michigan</p>
+</section>
+
+<footer class="shell foot">
+  <div class="foot-in">
+    <span>&copy; 2026 Singh Dynamics</span>
+    <span class="foot-fam">
+      <a class="link" href="https://sales.singhdynamics.com/">Websites</a>
+      <a class="link" href="https://singhar.singhdynamics.com/">Singh AR</a>
+      <a class="link" href="https://websiteqc.singhdynamics.com/">Website QC</a>
+    </span>
+  </div>
+</footer>
+
+<script src="motion.js" defer></script>
 </body>
 </html>

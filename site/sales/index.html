@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Singh Dynamics | Websites for Michigan small businesses</title>
-<meta name="description" content="We build a real website for your business first, you look at it, then you decide. Fast, simple sites for Michigan auto repair, HVAC, plumbing and landscaping businesses.">
+<title>Websites for Michigan small businesses | Singh Dynamics</title>
+<meta name="description" content="We build your website first. You look at it. Then you decide. One-time build, $400 to $700, for auto repair, tire, plumbing, HVAC and landscaping businesses in Michigan.">
 <link rel="canonical" href="https://sales.singhdynamics.com/">
-<meta name="theme-color" content="#FCFBF8">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%232457FF'/%3E%3Cpath d='M9 11.4h15' stroke='%23FCFBF8' stroke-width='3.2'/%3E%3Cpath d='M13.2 22.2l4.4-4.6 4.4 4.6' stroke='%23FCFBF8' stroke-width='3.2' fill='none'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#F1EEE7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%23C4402A'/%3E%3Cpath d='M9 11.4h15' stroke='%23F1EEE7' stroke-width='3.2'/%3E%3Cpath d='M13.2 22.2l4.4-4.6 4.4 4.6' stroke='%23F1EEE7' stroke-width='3.2' fill='none'/%3E%3C/svg%3E">
 
-<meta property="og:title" content="Websites for Michigan small businesses">
+<meta property="og:title" content="You need a website. You shouldn't need an agency.">
 <meta property="og:description" content="We build it first. You look at it. Then you decide.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sales.singhdynamics.com/">
@@ -18,9 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="brand.css">
 
 <script type="application/ld+json">
@@ -32,74 +30,239 @@
 </script>
 
 <style>
-body { background: var(--paper); font-size: clamp(1.04rem, 1.15vw, 1.15rem); line-height: 1.68; }
-.top { padding: 1.5rem 0; }
-.top-in { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.brandline { display: block; font-size: var(--t-micro); color: var(--muted); letter-spacing: .01em; margin-top: 1px; }
-.hero { padding: clamp(2.5rem, 6vw, 4.5rem) 0 clamp(3rem, 7vw, 5rem); }
-.hero-grid { display: grid; gap: var(--s4); align-items: center; }
-.hero h1 { font-size: clamp(2.3rem, 5.6vw, 4rem); letter-spacing: -.035em; max-width: 15ch; }
-.hero p { margin-top: var(--s3); max-width: 44ch; color: var(--ink-2); }
-.hero-cta { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: center; margin-top: var(--s4); }
-.reassure { font-size: var(--t-small); color: var(--muted); }
-.preview { border: 1px solid var(--rule); background: #fff; box-shadow: 0 18px 40px -28px rgba(17,19,21,.4); }
-.pv-bar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--rule-soft); background: var(--canvas); }
-.pv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rule); }
-.pv-url { margin-left: 8px; font-size: 11px; color: var(--muted); }
-.pv-body { padding: 22px 22px 26px; }
-.pv-nav { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--rule-soft); }
-.pv-logo { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: -.02em; }
-.pv-call { background: var(--accent); color: #fff; font-size: 11px; font-weight: 500; padding: 6px 11px; }
-.pv-h { font-family: var(--font-display); font-weight: 600; font-size: clamp(19px, 2.3vw, 26px); letter-spacing: -.03em; margin: 20px 0 8px; line-height: 1.15; }
-.pv-p { font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 34ch; }
-.pv-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-.pv-cell { border: 1px solid var(--rule-soft); padding: 10px 12px; font-size: 12px; }
-.pv-cell b { display: block; font-weight: 500; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
-.band { padding: clamp(3rem, 7vw, 5.5rem) 0; }
-.split { display: grid; gap: var(--s3); }
-@media (min-width: 900px) { .split { grid-template-columns: 15.5rem 1fr; gap: var(--s5); align-items: start; } .split > .h-lead { position: sticky; top: 2rem; } }
-.band-alt { background: var(--canvas); }
-.h-lead { font-size: clamp(1.7rem, 3.6vw, 2.6rem); letter-spacing: -.03em; max-width: 18ch; }
-.flow { margin-top: var(--s4); display: grid; gap: 0; max-width: 780px; }
-.step { display: grid; grid-template-columns: auto 1fr; gap: 1.4rem; }
-.step-rail { display: flex; flex-direction: column; align-items: center; }
-.step-num { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-display); font-weight: 600; font-size: .95rem; }
-.step-line { width: 2px; flex: 1; background: var(--rule); min-height: 34px; }
-.step:last-child .step-line { display: none; }
-.step-body { padding-bottom: var(--s4); }
-.step:last-child .step-body { padding-bottom: 0; }
-.step h3 { font-size: clamp(1.15rem, 2vw, 1.45rem); }
-.step p { margin-top: .4rem; color: var(--ink-2); max-width: 48ch; }
-.price-grid { display: grid; gap: var(--s4); margin-top: var(--s4); align-items: start; }
-.price-main .amount { font-family: var(--font-display); font-weight: 600; font-size: clamp(3.2rem, 9vw, 5.2rem); letter-spacing: -.045em; line-height: 1; }
-.price-main .amount span { color: var(--accent); }
-.price-main .what { margin-top: .6rem; font-size: 1.1rem; }
-.price-list { display: grid; gap: 0; margin-top: var(--s3); }
-.price-list li { list-style: none; padding: .7rem 0; border-top: 1px solid var(--rule-soft); display: flex; gap: .8rem; }
-.price-list li::before { content: ""; width: 7px; height: 7px; background: var(--accent); margin-top: .62rem; flex: none; }
-.price-side { border-left: 3px solid var(--accent); padding: .2rem 0 .2rem 1.4rem; }
-.price-side .amount2 { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.6rem,3.4vw,2.2rem); letter-spacing: -.03em; }
-.qa { display: grid; gap: 0; margin-top: var(--s4); max-width: 760px; }
-.qa div { padding: var(--s3) 0; border-top: 1px solid var(--rule); }
-.qa h3 { margin-bottom: .4rem; }
-.qa p { color: var(--ink-2); max-width: 56ch; }
-.finish { padding: clamp(3rem,7vw,5rem) 0; background: var(--accent); color: #fff; }
-.finish h2 { color: #fff; font-size: clamp(1.8rem,4vw,2.8rem); max-width: 20ch; letter-spacing: -.03em; }
-.finish p { margin-top: var(--s2); color: rgba(255,255,255,.86); max-width: 48ch; }
-.finish .btn { background: #fff; color: var(--accent); margin-top: var(--s3); }
-.finish .btn:hover { background: var(--ink); color: #fff; }
-@media (min-width: 820px) { .hero-grid { grid-template-columns: 1fr 1.02fr; gap: var(--s5); } .price-grid { grid-template-columns: 1.3fr .7fr; gap: var(--s5); } }
+/* ==========================================================================
+   sales.singhdynamics.com. Owns a brick red. Same quiet register as the
+   family, but the sentences are shorter and plainer than anywhere else,
+   because the reader is a shop owner on a phone, not a design director.
+   ========================================================================== */
+
+:root { --own: #C4402A; --canvas: #F1EEE7; }
+
+/* --- The build event. The one loud moment on the page: a bare listing
+       resolving into an actual site as you scroll. --p comes from motion.js
+       and falls back to the finished state when JS is off. ---------------- */
+
+.stage-wrap { --pp: var(--p, 1); }
+.stage {
+  width: min(860px, 88vw); margin-inline: auto; text-align: left;
+  background: #FFFFFF; border: 1px solid var(--rule);
+}
+.stage-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 11px 14px; border-bottom: 1px solid var(--rule-soft); background: var(--canvas);
+}
+.stage-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rule); }
+.stage-url { margin-left: 10px; font-family: var(--font-ui); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.stage-body { position: relative; padding: clamp(20px, 3.4vw, 38px); min-height: clamp(240px, 32vw, 360px); }
+
+.before {
+  position: absolute; inset: clamp(20px, 3.4vw, 38px);
+  display: grid; place-content: center; text-align: center; gap: .6rem;
+  opacity: calc(1 - (var(--pp) * 2.1));
+}
+.before .b2 {
+  font-family: var(--font-display); font-variation-settings: 'opsz' 40;
+  font-size: clamp(1.05rem, 2.2vw, 1.5rem); color: var(--muted); max-width: 30ch;
+}
+
+.after { display: grid; gap: 14px; opacity: calc((var(--pp) - .3) * 2.6); }
+.a-nav { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--rule-soft); }
+.a-logo { font-family: var(--font-display); font-variation-settings: 'opsz' 40; font-size: clamp(14px, 1.6vw, 17px); }
+.a-call { background: var(--own); color: #fff; font-family: var(--font-ui); font-size: 10px; letter-spacing: .1em; padding: 7px 12px; }
+.a-h {
+  font-family: var(--font-display); font-variation-settings: 'opsz' 90;
+  font-size: clamp(21px, 3.4vw, 34px); line-height: 1.08; letter-spacing: -.02em;
+  transform: translateY(calc((1 - var(--pp)) * 24px));
+}
+.a-line { height: 7px; background: var(--rule-soft); transform-origin: left; transform: scaleX(var(--pp)); }
+.a-line.l2 { width: 76%; }
+.a-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 6px; }
+.a-cell {
+  border: 1px solid var(--rule-soft); padding: 10px 12px;
+  font-family: var(--font-ui); font-size: 12px; color: var(--muted);
+  opacity: var(--pp); transform: translateY(calc((1 - var(--pp)) * 14px));
+}
+.a-cell b { display: block; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); margin-bottom: 4px; font-weight: 500; }
+@media (min-width: 640px) { .a-row { grid-template-columns: repeat(4, 1fr); } }
+
+/* --- Steps --------------------------------------------------------------- */
+
+.step .n { margin-bottom: var(--s4); }
+.step .why { margin-top: var(--s4); }
+
+/* --- Price --------------------------------------------------------------- */
+
+.price-n {
+  font-family: var(--font-display); font-variation-settings: 'opsz' 144;
+  font-size: clamp(3.4rem, 13vw, 11rem); line-height: .9; letter-spacing: -.035em;
+  color: var(--own);
+}
+.price-rows { margin-top: var(--s6); width: min(620px, 88vw); text-align: left; }
+.price-rows div {
+  display: flex; flex-wrap: wrap; gap: .3rem 1.5rem; justify-content: space-between;
+  padding: .9rem 0; border-top: 1px solid var(--rule); font-family: var(--font-ui); font-size: var(--t-small);
+}
+.price-rows span { color: var(--muted); text-align: right; }
+
+/* --- Questions ------------------------------------------------------------ */
+
+.qa { display: grid; gap: var(--s5); }
+.qa .q { display: grid; gap: .6rem; justify-items: center; }
+.qa .q p.a { max-width: 46ch; color: var(--ink-2); }
+
+.mail {
+  margin-top: var(--s5);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 60;
+  font-size: clamp(1.15rem, 3.2vw, 2.2rem); letter-spacing: -.015em; color: var(--own);
+  background-image: linear-gradient(var(--own), var(--own));
+  background-repeat: no-repeat; background-position: 0 100%; background-size: 100% 1px;
+  padding-bottom: .1em; display: inline-block;
+}
+.mail:hover { background-size: 0% 1px; }
 </style>
 </head>
 <body>
-<header class="top"><div class="shell top-in"><a class="lockup" href="https://singhdynamics.com/" aria-label="Singh Dynamics home"><svg width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Singh Dynamics Web mark"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#2457FF"/><path d="M9 11.4h15" stroke="#FCFBF8" stroke-width="3.2"/><path d="M13.2 22.2l4.4-4.6 4.4 4.6" stroke="#FCFBF8" stroke-width="3.2" fill="none"/></svg><span><span class="lockup-name">Singh Dynamics</span><span class="brandline">Websites for local business</span></span></a><a class="link" href="#start">Get in touch</a></div></header>
+
+<header class="shell bar">
+  <a class="lockup" href="/" aria-label="Websites by Singh Dynamics">
+    <svg width="20" height="20" viewBox="0 0 32 32" role="img" aria-label="Singh Dynamics mark">
+      <path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#C4402A"/>
+      <path d="M9 11.4h15" stroke="#F1EEE7" stroke-width="3.2"/>
+      <path d="M13.2 22.2l4.4-4.6 4.4 4.6" stroke="#F1EEE7" stroke-width="3.2" fill="none"/>
+    </svg>
+    <span class="lockup-name">Websites</span>
+  </a>
+  <a class="label mid" href="https://singhdynamics.com/">A Singh Dynamics product</a>
+  <a class="label link" href="#start">Start</a>
+</header>
+
 <main>
-<section class="hero"><div class="shell hero-grid"><div class="rise"><h1>Most small shops don't have a website. That costs them work.</h1><p>When someone searches for what you do at 9pm on a Sunday, they should find you instead of the shop down the road. We build fast, simple sites for Michigan businesses, and we build yours before we ask you for anything.</p><div class="hero-cta"><a class="btn" href="#start">See what yours would look like</a><span class="reassure">No cost to look. No contract to sign.</span></div></div><div class="preview" aria-label="Example of the kind of site we build"><div class="pv-bar" aria-hidden="true"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-url">yourshopname.com</span></div><div class="pv-body"><div class="pv-nav"><span class="pv-logo">Your Shop Name</span><span class="pv-call">Call now</span></div><p class="pv-h">Brakes, tires and engine work in Novi.</p><p class="pv-p">Open 8 to 6, Monday through Saturday. Walk-ins welcome. Free estimates on most repairs.</p><div class="pv-rows" aria-hidden="true"><span class="pv-cell"><b>Hours</b>Mon to Sat, 8 to 6</span><span class="pv-cell"><b>Phone</b>Tap to call</span><span class="pv-cell"><b>Address</b>With a real map</span><span class="pv-cell"><b>Services</b>What you actually do</span></div></div></div></div></section>
-<section class="band band-alt"><div class="shell split"><h2 class="h-lead">Three steps. You only do one of them.</h2><div class="flow" style="margin-top:0"><div class="step"><div class="step-rail"><span class="step-num">1</span><span class="step-line"></span></div><div class="step-body"><h3>We build it first</h3><p>We look up your business, write the pages, and put together a real working site. You are not filling in a form or picking a template. There is nothing for you to do at this stage.</p></div></div><div class="step"><div class="step-rail"><span class="step-num">2</span><span class="step-line"></span></div><div class="step-body"><h3>You correct what only you know</h3><p>Prices, hours, the services you actually offer, the stuff we got wrong. This is the only part that needs you, and it is usually one phone call.</p></div></div><div class="step"><div class="step-rail"><span class="step-num">3</span></div><div class="step-body"><h3>It goes live on your domain</h3><p>In your name, on your own address, and you own it. If you decide you do not want it, you walk away and you have paid nothing.</p></div></div></div></div></section>
-<section class="band"><div class="shell split"><h2 class="h-lead">What it costs</h2><div class="price-grid" style="margin-top:0"><div class="price-main"><div class="amount">$400 to <span>$700</span></div><p class="what">One time, to build the site and put it live.</p><ul class="price-list"><li>Written and built for your business, not a template you fill in</li><li>Works properly on a phone, which is where most people will find you</li><li>Your own domain, in your name, owned by you</li><li>Loads fast enough that nobody leaves before it appears</li></ul></div><div class="price-side"><div class="amount2">$75 / month</div><p class="small muted" style="margin-top:.5rem">Optional. Keeping your Google Business Profile current, changing hours and prices when they change, and keeping the site online.</p><p class="small muted" style="margin-top:.9rem">Skip it if you would rather handle that yourself. The site is yours either way.</p></div></div></div></section>
-<section class="band band-alt"><div class="shell split"><h2 class="h-lead">Fair questions</h2><div class="qa" style="margin-top:0"><div><h3>Why would you build it before I pay?</h3><p>Because it is easier to judge a real site than a promise. It also means we do the work of understanding your business before asking you to trust us with anything.</p></div><div><h3>Who am I actually dealing with?</h3><p>Singh Dynamics, based in Novi. Small, and straightforward about it. You will be talking to the person who builds the site, not a salesperson passing you along.</p></div><div><h3>What happens if I want to leave later?</h3><p>The domain and the site are in your name. You take them with you. There is nothing to cancel and nothing holding them hostage.</p></div></div></div></section>
+
+<!-- ===================== OPENING ===================== -->
+<section class="screen">
+  <h1 class="statement">You need a website.</h1>
+  <p class="sentence" style="margin-top:var(--s4); color:var(--ink-2)" data-rise style="--d:200ms">You shouldn't need an agency to get one.</p>
+  <p class="label" style="margin-top:var(--s6)" data-rise style="--d:500ms">Auto repair &middot; Tire &middot; Plumbing &middot; HVAC &middot; Landscaping</p>
+</section>
+
+<!-- ===================== WHAT YOU ACTUALLY NEED ===================== -->
+<section class="screen">
+  <p class="sentence" data-rise>Most shops do not need a marketing strategy.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>You need a page that loads fast, says what you do, shows the hours, and puts the phone number where a thumb can hit it. That is what we build.</p>
+</section>
+
+<!-- ===================== THE BUILD EVENT ===================== -->
+<section class="screen stage-wrap" data-progress>
+  <p class="label" style="margin-bottom:var(--s5)">Here is what happens to your shop online</p>
+
+  <div class="stage">
+    <div class="stage-bar" aria-hidden="true">
+      <i class="stage-dot"></i><i class="stage-dot"></i><i class="stage-dot"></i>
+      <span class="stage-url">yourshop.com</span>
+    </div>
+    <div class="stage-body">
+      <div class="before" aria-hidden="true">
+        <span class="b2">Today: a Facebook page, and a phone number somebody wrote down wrong.</span>
+      </div>
+      <div class="after" aria-hidden="true">
+        <div class="a-nav"><span class="a-logo">Your Shop</span><span class="a-call">CALL NOW</span></div>
+        <div class="a-h">Brakes, tires and diagnostics in your town.</div>
+        <div class="a-line l2"></div>
+        <div class="a-row">
+          <div class="a-cell"><b>Hours</b>Mon to Sat</div>
+          <div class="a-cell"><b>Call</b>One tap</div>
+          <div class="a-cell"><b>Find</b>Map and address</div>
+          <div class="a-cell"><b>Services</b>Plainly listed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:var(--s5)">No stock photos of people in hard hats. No slider. Your name, your work, your number, loading in under a second on the worst phone in the parking lot.</p>
+</section>
+
+<!-- ===================== PROCESS ===================== -->
+<section class="screen step">
+  <span class="label own n" data-rise>Step 01</span>
+  <p class="statement" data-rise>We build it.</p>
+  <p class="note why" data-rise>Before you pay anything and before you sign anything. We look up your business, build the whole site, and send you a link.</p>
+</section>
+
+<section class="screen step">
+  <span class="label own n" data-rise>Step 02</span>
+  <p class="statement" data-rise>You tell us what we got wrong.</p>
+  <p class="note why" data-rise>We will have something wrong. The hours, a service you dropped, the way you actually describe the work. You are the only person who knows. Ten minutes on the phone.</p>
+</section>
+
+<section class="screen step">
+  <span class="label own n" data-rise>Step 03</span>
+  <p class="statement" data-rise>We fix it. You go live.</p>
+  <p class="note why" data-rise>Corrections go in, the domain gets pointed, and the site is yours. If you decide you do not want it, you say so and nothing happens. You are not out anything.</p>
+</section>
+
+<!-- ===================== PRICE ===================== -->
+<section class="screen">
+  <span class="label" data-rise>What it costs</span>
+  <p class="price-n" style="margin-top:var(--s3)" data-rise>$400&ndash;700</p>
+  <p class="sentence" style="margin-top:var(--s3)" data-rise>One time. That is the website.</p>
+
+  <div class="price-rows" data-rise>
+    <div><b style="font-weight:500">Where you land in that range</b><span>Number of services and pages</span></div>
+    <div><b style="font-weight:500">Domain and hosting</b><span>In your name, you own both</span></div>
+    <div><b style="font-weight:500">Paid when</b><span>After you have seen the site</span></div>
+    <div><b style="font-weight:500">Contract</b><span>None</span></div>
+    <div><b style="font-weight:500">Care plan, optional</b><span>$75/mo, and plenty of shops skip it</span></div>
+  </div>
+</section>
+
+<!-- ===================== PROOF ===================== -->
+<section class="screen">
+  <p class="statement wide" data-rise>Don't trust a sales pitch. Look at the site.</p>
+  <p class="note" style="margin-top:var(--s5)" data-rise>We are new, and we are not going to paste fake reviews or logos of companies we have never worked with to hide that. So we do the opposite. You get a finished website for your actual business, online, before money comes up. Then you judge the work instead of the pitch.</p>
+</section>
+
+<!-- ===================== QUESTIONS ===================== -->
+<section class="pad shell-n">
+  <div class="qa">
+    <div class="q" data-rise>
+      <p class="sentence">Why build it before I pay?</p>
+      <p class="a">A real site is easier to judge than a promise. It also forces us to understand your business before we ask you to trust us with anything.</p>
+    </div>
+    <div class="q" data-rise>
+      <p class="sentence">Who am I dealing with?</p>
+      <p class="a">Singh Dynamics, out of Novi. Small, and straightforward about it. You talk to the person who builds the site.</p>
+    </div>
+    <div class="q" data-rise>
+      <p class="sentence">What if I want to leave later?</p>
+      <p class="a">The domain and the site are in your name. You take them with you. Nothing to cancel, nothing held hostage.</p>
+    </div>
+    <div class="q" data-rise>
+      <p class="sentence">How long does it take?</p>
+      <p class="a">Days, not months. Waiting on your corrections is usually what sets the pace.</p>
+    </div>
+  </div>
+</section>
+
 </main>
-<section class="finish" id="start"><div class="shell"><h2>Tell us the name of your shop. We'll build the rest.</h2><p>Send the business name and the town. That is genuinely all we need to start.</p><a class="btn" href="mailto:sarab@singhdynamics.com?subject=Website%20for%20my%20business">Email sarab@singhdynamics.com</a></div></section>
-<footer class="foot"><div class="shell foot-in"><span>Website Sales, a Singh Dynamics product. Novi, Michigan.</span><span class="foot-fam"><a href="https://singhdynamics.com/">Singh Dynamics</a><a href="https://singhar.singhdynamics.com/">Singh AR</a><a href="https://websiteqc.singhdynamics.com/">Website QC</a></span></div></footer>
+
+<!-- ===================== START ===================== -->
+<section class="screen" id="start">
+  <p class="statement" data-rise>Tell us the name of your shop.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>The business name and the town. That is all we need to start building.</p>
+  <a class="mail" href="mailto:sarab@singhdynamics.com?subject=Website%20for%20my%20business" data-rise>sarab@singhdynamics.com</a>
+</section>
+
+<footer class="shell foot">
+  <div class="foot-in">
+    <span>Websites, a Singh Dynamics product. Novi, Michigan.</span>
+    <span class="foot-fam">
+      <a class="link" href="https://singhdynamics.com/">Singh Dynamics</a>
+      <a class="link" href="https://singhar.singhdynamics.com/">Singh AR</a>
+      <a class="link" href="https://websiteqc.singhdynamics.com/">Website QC</a>
+    </span>
+  </div>
+</footer>
+
+<script src="motion.js" defer></script>
 </body>
 </html>
