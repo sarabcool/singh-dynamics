@@ -3,22 +3,243 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Singh AR | Accounts receivable follow-up that runs itself</title>
-<meta name="description" content="Singh AR connects to QuickBooks Online and your business mailbox, follows up on overdue invoices automatically, and stops at anything that changes business terms.">
+<title>Singh AR | Invoice follow-up with a policy gate</title>
+<meta name="description" content="Singh AR watches open invoices in QuickBooks Online, follows up from your own mailbox, reads the replies, and stops at anything that changes what is owed. In active development.">
 <link rel="canonical" href="https://singhar.singhdynamics.com/">
-<meta name="theme-color" content="#F4F2ED">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%230F6B57'/%3E%3Cpath d='M23 11H13.2v4.2H23V21h-4.4' stroke='%23F4F2ED' stroke-width='3.6' fill='none'/%3E%3Crect x='11.4' y='19.2' width='5.4' height='5.4' fill='%23F4F2ED'/%3E%3C/svg%3E">
-<meta property="og:title" content="Singh AR"><meta property="og:description" content="Automate the routine. Gate the exceptions."><meta property="og:type" content="website"><meta property="og:url" content="https://singhar.singhdynamics.com/"><meta property="og:image" content="https://singhar.singhdynamics.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="brand.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Singh AR","applicationCategory":"BusinessApplication","description":"B2B accounts receivable follow-up with a deterministic policy gate between AI judgment and external action.","url":"https://singhar.singhdynamics.com/","publisher":{"@type":"Organization","name":"Singh Dynamics","url":"https://singhdynamics.com/"}}</script>
+<meta name="theme-color" content="#ECEFEA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%230B5C4A'/%3E%3Cpath d='M23 11H13.2v4.2H23V21h-4.4' stroke='%23ECEFEA' stroke-width='3.6' fill='none'/%3E%3Crect x='11.4' y='19.2' width='5.4' height='5.4' fill='%23ECEFEA'/%3E%3C/svg%3E">
+
+<meta property="og:title" content="Singh AR">
+<meta property="og:description" content="Automate routine. Gate exceptions.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://singhar.singhdynamics.com/">
+<meta property="og:image" content="https://singhar.singhdynamics.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="brand.css">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Singh AR",
+"applicationCategory":"BusinessApplication",
+"description":"B2B accounts receivable follow-up with a deterministic policy gate between AI judgment and external action.",
+"url":"https://singhar.singhdynamics.com/",
+"publisher":{"@type":"Organization","name":"Singh Dynamics","url":"https://singhdynamics.com/"}}
+</script>
+
 <style>
-:root{--accent:#0F6B57;--accent-soft:#E4EFEA}.top{padding:1.5rem 0;border-bottom:1px solid var(--rule)}.top-in{display:flex;align-items:center;justify-content:space-between;gap:1rem}.parent{display:block;font-size:var(--t-micro);color:var(--muted);margin-top:1px}.parent a{border-bottom:1px solid transparent}.parent a:hover{color:var(--accent);border-bottom-color:var(--accent)}.hero{padding:clamp(2.5rem,6vw,4.5rem) 0 clamp(2rem,5vw,3.5rem)}.hero h1{font-size:clamp(2.2rem,5.2vw,3.7rem);letter-spacing:-.035em;max-width:17ch}.hero p{margin-top:var(--s3);max-width:50ch}.hero-context{margin-top:var(--s3);color:var(--muted);font-size:var(--t-small)}.status-chip{display:inline-block;margin-top:var(--s2);padding:.38rem .62rem;border-left:3px solid var(--accent);background:var(--accent-soft);color:var(--ink);font-size:var(--t-small);font-weight:500}.sysx{padding:0 0 clamp(3rem,7vw,5rem)}.sysx>.shell{width:min(1040px,92vw)}.sys{border:1px solid var(--rule);background:var(--paper);padding:clamp(1.4rem,3.4vw,2.6rem)}.sys-cap{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:var(--s3)}.sys-cap h2{font-size:var(--t-h3)}.node{border:1px solid var(--rule);background:var(--canvas);padding:.85rem 1rem}.node b{display:block;font-family:var(--font-display);font-weight:600;font-size:.98rem;letter-spacing:-.015em}.node span{display:block;font-size:var(--t-small);color:var(--muted);margin-top:.15rem}.sources{display:grid;gap:.7rem}.core{background:var(--accent);color:#fff;padding:1.1rem 1.2rem;display:flex;align-items:center;gap:.8rem}.core b{display:block;font-family:var(--font-display);font-weight:600;font-size:1.15rem;letter-spacing:-.02em}.core span{display:block;font-size:var(--t-small);color:rgba(255,255,255,.82)}.gate{border:1.5px solid var(--accent);padding:.9rem 1.1rem;background:var(--accent-soft)}.gate b{font-family:var(--font-display);font-weight:600;font-size:1rem}.gate span{display:block;font-size:var(--t-small);color:var(--ink-2);margin-top:.15rem}.arrow{display:grid;place-items:center;padding:.45rem 0;color:var(--accent)}.fork{display:grid;gap:.7rem}.out{padding:.85rem 1rem;border:1px solid var(--rule)}.out.auto{border-left:3px solid var(--accent)}.out.held{border-left:3px solid var(--ink);background:var(--canvas-deep)}.out b{display:block;font-family:var(--font-display);font-weight:600;font-size:.98rem}.out span{display:block;font-size:var(--t-small);color:var(--muted);margin-top:.15rem}.state{font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.04em;color:var(--accent)}.state.ink{color:var(--ink)}.principle{background:var(--ink);color:var(--canvas);padding:clamp(3rem,7vw,5rem) 0}.principle h2{color:var(--canvas);font-size:clamp(1.9rem,4.6vw,3rem);letter-spacing:-.035em;max-width:16ch}.principle h2 em{font-style:normal;color:#5FCBAA}.principle p{margin-top:var(--s3);max-width:54ch;color:rgba(244,242,237,.76)}.gates{display:grid;gap:0;align-content:center;margin-top:var(--s3)}.gates div{display:grid;gap:.15rem;padding:.9rem 0;border-top:1px solid rgba(244,242,237,.16)}.gk{font-family:var(--font-mono);font-size:var(--t-micro);color:#5FCBAA;letter-spacing:.04em}.gv{font-family:var(--font-display);font-weight:500;font-size:1.05rem;color:var(--canvas)}.band{padding:clamp(3rem,7vw,5rem) 0}.h-lead{font-size:clamp(1.7rem,3.6vw,2.5rem);letter-spacing:-.03em;max-width:20ch}.scope{display:grid;gap:var(--s4);margin-top:var(--s4)}.scope section h3{font-size:1rem;padding-bottom:.7rem;border-bottom:2px solid var(--ink)}.scope section:first-child h3{border-bottom-color:var(--accent);color:var(--accent)}.scope section:last-child h3{border-bottom-color:#8A2A2A;color:#8A2A2A}.scope ul{list-style:none;padding:0;margin:0}.scope li{padding:.7rem 0;border-bottom:1px solid var(--rule-soft);font-size:var(--t-small);color:var(--ink-2)}.status{border-left:3px solid var(--accent);padding-left:1.4rem;max-width:62ch;margin-left:0}.finish{padding:clamp(3rem,7vw,5rem) 0;border-top:1px solid var(--rule)}.finish h2{font-size:clamp(1.7rem,3.6vw,2.4rem);max-width:20ch;letter-spacing:-.03em}.finish p{margin-top:var(--s2);max-width:50ch;color:var(--ink-2)}@media(min-width:860px){.principle-in{display:grid;grid-template-columns:1.5fr .9fr;gap:var(--s5);align-items:center}.gates{margin-top:0}.sys-flow{display:grid;grid-template-columns:1fr auto 1.15fr;gap:var(--s4);align-items:center}.arrow.h{padding:0}.fork{grid-template-columns:1fr 1fr}.scope{grid-template-columns:repeat(3,1fr);gap:var(--s4)}}
-</style></head><body>
-<header class="top"><div class="shell top-in"><span class="lockup"><svg width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Singh AR mark"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#0F6B57"/><path d="M23 11H13.2v4.2H23V21h-4.4" stroke="#F4F2ED" stroke-width="3.6" fill="none"/><rect x="11.4" y="19.2" width="5.4" height="5.4" fill="#F4F2ED"/></svg><span><span class="lockup-name">Singh AR</span><span class="parent"><a href="https://singhdynamics.com/">Singh Dynamics</a></span></span></span><a class="link" href="#talk">Get in touch</a></div></header>
-<main><section class="hero"><div class="shell rise"><h1>Chasing unpaid invoices shouldn't be a full-time job.</h1><p class="lede">Singh AR connects to QuickBooks Online and your business mailbox, watches your open invoices, and follows up on its own. It comes to you when a real business decision is on the line, and not for routine reminders.</p><p class="hero-context">Built for commercial B2B invoicing workflows using QuickBooks Online and a business mailbox.</p><span class="status-chip">In active development</span></div></section>
-<section class="sysx"><div class="shell"><div class="sys"><div class="sys-cap"><h2>How a single overdue invoice moves</h2><span class="tag">read left to right</span></div><div class="sys-flow"><div class="sources"><div class="node"><b>QuickBooks Online</b><span>Source of truth for invoices, balances and due dates.</span></div><div class="node"><b>Your business mailbox</b><span>Follow-up goes out from your address, in your own thread.</span></div></div><div class="arrow h" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7h31M26 2l5 5-5 5" stroke="currentColor" stroke-width="1.6"/></svg></div><div><div class="core"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#fff" opacity=".18"/><path d="M23 11H13.2v4.2H23V21h-4.4" stroke="#fff" stroke-width="3.6" fill="none"/><rect x="11.4" y="19.2" width="5.4" height="5.4" fill="#fff"/></svg><span style="display:block"><b>Singh AR</b><span>Watches, drafts, sends, reads the reply.</span></span></div><div class="arrow" aria-hidden="true"><svg width="14" height="26" viewBox="0 0 14 26" fill="none"><path d="M7 0v23M2 18l5 5 5-5" stroke="currentColor" stroke-width="1.6"/></svg></div><div class="gate"><b>Policy engine</b><span>Deterministic, not a language model. Decides whether the proposed action is inside the authority you configured.</span></div><div class="arrow" aria-hidden="true"><svg width="14" height="26" viewBox="0 0 14 26" fill="none"><path d="M7 0v23M2 18l5 5 5-5" stroke="currentColor" stroke-width="1.6"/></svg></div><div class="fork"><div class="out auto"><span class="state">inside policy</span><b>Sends by itself</b><span>Routine reminders, payment confirmations, recording a promise to pay.</span></div><div class="out held"><span class="state ink">outside policy</span><b>Waits for you</b><span>Disputes, discounts, changed terms, anything touching what is owed.</span></div></div></div></div></div></div></section>
-<section class="principle"><div class="shell principle-in"><div><h2>Automate the routine. <em>Gate the exceptions.</em></h2><p>The model can classify, summarise, draft and propose. It never decides whether it is allowed to act. A separate deterministic policy engine makes that call, which means the boundary of what this software can do to a customer relationship is something you set and can read, not something you hope the model inferred correctly at 3am.</p></div><div class="gates"><div><span class="gk">inside policy</span><span class="gv">the software acts</span></div><div><span class="gk">outside policy</span><span class="gv">you act</span></div><div><span class="gk">unparsed</span><span class="gv">you act</span></div></div></div></section>
-<section class="band"><div class="shell"><h2 class="h-lead">Where the line sits</h2><div class="scope"><section><h3>Does on its own</h3><ul><li>Watches open invoices and due dates in QuickBooks Online</li><li>Sends routine follow-up from your mailbox, in the existing thread</li><li>Reads replies and understands what the customer actually said</li><li>Records a promise to pay and follows up when that date passes</li><li>Stops chasing the moment an invoice is settled</li></ul></section><section><h3>Brings to you</h3><ul><li>A customer disputing the amount or the work</li><li>Any request for a discount or a write-off</li><li>Changes to payment terms</li><li>Anything the policy engine cannot place inside your configured authority</li><li>Replies that do not clearly parse as one of the known cases</li></ul></section><section><h3>Will not do</h3><ul><li>Purchase debt or act as a collections agency</li><li>Threaten legal action</li><li>Report anyone to a credit bureau</li><li>Invent fees or waive balances outside your authority</li><li>Consumer debt collection. This is commercial B2B software</li></ul></section></div></div></section>
-<section class="band" style="padding-top:0"><div class="shell status"><span class="tag">Status</span><p style="margin-top:.6rem">Singh AR is in active development and is not generally available. The deterministic core and the policy model are the parts being built first, deliberately, because they are what makes the rest safe to run unattended. If you run a business that invoices other businesses and manual follow-up is eating your week, get in touch and we can talk about whether an early integration makes sense.</p></div></section></main>
-<section class="finish" id="talk"><div class="shell"><h2>Tell me how AR follow-up works at your business today.</h2><p>Specifically, what is eating the time. That is more useful than a feature list, and it is how the next part of this gets built.</p><p style="margin-top:var(--s3)"><a class="btn" href="mailto:sarab@singhdynamics.com?subject=Singh%20AR">Email sarab@singhdynamics.com</a></p></div></section><footer class="foot"><div class="shell foot-in"><span>Singh AR, a Singh Dynamics product. Novi, Michigan.</span><span class="foot-fam"><a href="https://singhdynamics.com/">Singh Dynamics</a><a href="https://sales.singhdynamics.com/">Website Sales</a><a href="https://websiteqc.singhdynamics.com/">Website QC</a></span></div></footer>
-</body></html>
+/* ==========================================================================
+   singhar.singhdynamics.com. Owns jade. The most measured member of the
+   family: tighter line lengths, tabular figures, and one diagram that is the
+   only thing on this site allowed to move.
+   ========================================================================== */
+
+:root { --own: #0B5C4A; --canvas: #ECEFEA; }
+
+.status {
+  display: inline-flex; align-items: center; gap: .6rem;
+  font-family: var(--font-ui); font-size: var(--t-micro); font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--own);
+}
+.status i { width: 6px; height: 6px; background: var(--own); display: block; }
+
+/* --- The one moving thing. An invoice crossing the policy gate, drawn by
+       scroll. --p comes from motion.js and resolves to 1 without JS. ------ */
+
+.trace { --pp: var(--p, 1); width: min(940px, 90vw); }
+.trace svg { width: 100%; height: auto; overflow: visible; }
+.trace .track { stroke: var(--rule); stroke-width: 1.5; }
+.trace .live  { stroke: var(--own); stroke-width: 2.5; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--pp)); }
+.trace .split { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 1; stroke-dashoffset: calc(1 - clamp(0, (var(--pp) - .55) * 3, 1)); }
+.trace .box { fill: none; stroke: var(--rule); stroke-width: 1.5; }
+.trace .box.on { stroke: var(--own); }
+.trace .gate { fill: none; stroke: var(--own); stroke-width: 2; opacity: clamp(0, (var(--pp) - .42) * 5, 1); }
+.trace .chip { fill: var(--own); opacity: clamp(0, (var(--pp) - .2) * 4, 1); }
+.trace .chip-hold { fill: var(--ink); opacity: clamp(0, (var(--pp) - .62) * 4, 1); }
+.trace text { font-family: 'Instrument Sans', sans-serif; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; fill: var(--muted); }
+.trace text.on { fill: var(--own); }
+.trace text.hold { fill: var(--ink); }
+
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem 2.4rem; margin-top: var(--s4); }
+.legend span { display: inline-flex; align-items: center; gap: .6rem; }
+.legend i { width: 18px; height: 2px; background: var(--own); display: block; }
+.legend i.ink { background: var(--ink); }
+
+/* --- Two columns of plain type. No boxes, no borders except hairlines. --- */
+
+.cols { display: grid; gap: var(--s6); width: min(920px, 88vw); text-align: left; }
+.col h3 { font-family: var(--font-ui); font-size: var(--t-micro); font-weight: 500; letter-spacing: .14em; text-transform: uppercase; padding-bottom: .8rem; border-bottom: 1px solid currentColor; }
+.col.does h3 { color: var(--own); }
+.col.holds h3 { color: var(--ink); }
+.col ul { list-style: none; padding: 0; margin: 0; }
+.col li { padding: .85rem 0; border-bottom: 1px solid var(--rule-soft); color: var(--ink-2); font-size: var(--t-small); }
+@media (min-width: 840px) { .cols { grid-template-columns: 1fr 1fr; gap: var(--s5); } }
+
+/* --- The limits, at the same scale as everything else. ------------------- */
+
+.no-list { list-style: none; padding: 0; margin: var(--s5) 0 0; display: grid; gap: 0; width: min(620px, 88vw); }
+.no-list li {
+  padding: 1.1rem 0; border-top: 1px solid var(--rule);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 40;
+  font-size: clamp(1.05rem, 2.2vw, 1.45rem); letter-spacing: -.01em;
+}
+
+.mail {
+  margin-top: var(--s5);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 60;
+  font-size: clamp(1.15rem, 3.2vw, 2.2rem); letter-spacing: -.015em; color: var(--own);
+  background-image: linear-gradient(var(--own), var(--own));
+  background-repeat: no-repeat; background-position: 0 100%; background-size: 100% 1px;
+  padding-bottom: .1em; display: inline-block;
+}
+.mail:hover { background-size: 0% 1px; }
+</style>
+</head>
+<body>
+
+<header class="shell bar">
+  <a class="lockup" href="https://singhdynamics.com/">
+    <svg width="20" height="20" viewBox="0 0 32 32" role="img" aria-label="Singh Dynamics mark">
+      <path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#0B5C4A"/>
+      <path d="M23 11H13.2v4.2H23V21h-4.4" stroke="#ECEFEA" stroke-width="3.6" fill="none"/>
+      <rect x="11.4" y="19.2" width="5.4" height="5.4" fill="#ECEFEA"/>
+    </svg>
+    <span class="lockup-name">Singh&nbsp;AR</span>
+  </a>
+  <a class="label mid" href="https://singhdynamics.com/">A Singh Dynamics product</a>
+  <a class="label link" href="#contact">Get in touch</a>
+</header>
+
+<main>
+
+<!-- ===================== OPENING ===================== -->
+<section class="screen">
+  <h1 class="statement">Get paid without chasing.</h1>
+  <span class="status" style="margin-top:var(--s6)" data-rise><i></i> In active development</span>
+</section>
+
+<!-- ===================== WHAT IT IS ===================== -->
+<section class="screen">
+  <p class="sentence" data-rise>It watches what is open, and follows up from your own mailbox.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>Singh AR connects to QuickBooks Online and your business mailbox. It sends routine follow-up inside the existing thread, reads what the customer writes back, and stops the moment something changes what is actually owed.</p>
+</section>
+
+<!-- ===================== THE PATH ===================== -->
+<section class="screen" data-progress>
+  <span class="label" style="margin-bottom:var(--s5)">One overdue invoice, end to end</span>
+
+  <div class="trace" role="img"
+       aria-label="An invoice moves from QuickBooks Online into Singh AR, then to a deterministic policy gate. Inside policy, follow-up sends automatically. Outside policy, it is held for a person to decide.">
+    <svg viewBox="0 0 900 290" fill="none" aria-hidden="true">
+      <path class="track" d="M40 190h130M230 190h150M440 190h150M650 190h210"/>
+      <path class="track" d="M615 190V78h245"/>
+
+      <path class="live" pathLength="1" d="M40 190h130M230 190h150M440 190h150M650 190h210"/>
+      <path class="split" pathLength="1" d="M615 190V78h245"/>
+
+      <rect class="box" x="170" y="162" width="60" height="56"/>
+      <rect class="chip" x="188" y="180" width="24" height="20"/>
+      <text x="170" y="240">QuickBooks</text>
+      <text x="170" y="256">invoice, balance, due date</text>
+
+      <rect class="box on" x="380" y="158" width="60" height="64"/>
+      <text class="on" x="380" y="240">Singh AR</text>
+      <text x="380" y="256">reads, drafts, proposes</text>
+
+      <path class="gate" d="M590 190l25-25 25 25-25 25z"/>
+      <text class="on" x="556" y="252">Policy gate</text>
+      <text x="556" y="268">deterministic, not a model</text>
+
+      <text class="on" x="700" y="178">Inside policy</text>
+      <text x="700" y="212">Reminder sends from your mailbox</text>
+
+      <rect class="chip-hold" x="700" y="50" width="9" height="9"/>
+      <text class="hold" x="718" y="59">Held for you</text>
+      <text x="700" y="98">Dispute. Discount. Changed terms.</text>
+    </svg>
+  </div>
+
+  <div class="legend label" data-rise>
+    <span><i></i> Runs on its own</span>
+    <span><i class="ink"></i> Waits for a person</span>
+  </div>
+</section>
+
+<!-- ===================== PRINCIPLE ===================== -->
+<section class="screen">
+  <p class="statement" data-rise>Automate routine. Gate exceptions.</p>
+  <p class="note" style="margin-top:var(--s5)" data-rise>The model classifies, summarises and drafts. It never decides whether it is allowed to act. A separate deterministic policy engine makes that call, which means the boundary of what this software can do to a customer relationship is something you set and can read, not something you hope was inferred correctly at three in the morning.</p>
+</section>
+
+<!-- ===================== THE LINE ===================== -->
+<section class="pad shell">
+  <p class="sentence" style="margin:0 auto var(--s6); text-align:center" data-rise>Where the line sits.</p>
+  <div class="cols" style="margin-inline:auto">
+    <div class="col does" data-rise>
+      <h3>Does on its own</h3>
+      <ul>
+        <li>Watches open invoices and due dates in QuickBooks Online</li>
+        <li>Sends routine follow-up from your mailbox, in the existing thread</li>
+        <li>Reads replies and understands what the customer actually said</li>
+        <li>Records a promise to pay and follows up when that date passes</li>
+        <li>Stops chasing the moment an invoice is settled</li>
+      </ul>
+    </div>
+    <div class="col holds" data-rise>
+      <h3>Brings to you</h3>
+      <ul>
+        <li>A customer disputing the amount or the work</li>
+        <li>Any request for a discount or a write-off</li>
+        <li>Changes to payment terms</li>
+        <li>Anything the policy engine cannot place inside your configured authority</li>
+        <li>Replies that do not clearly parse as one of the known cases</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== NO ===================== -->
+<section class="screen">
+  <p class="statement" data-rise>What it will never do.</p>
+  <ul class="no-list">
+    <li data-rise>Purchase debt or act as a collections agency.</li>
+    <li data-rise>Threaten legal action.</li>
+    <li data-rise>Report anyone to a credit bureau.</li>
+    <li data-rise>Invent fees or waive balances outside your authority.</li>
+    <li data-rise>Collect consumer debt.</li>
+  </ul>
+  <p class="label" style="margin-top:var(--s5)" data-rise>Commercial B2B invoicing software. Not a collections product.</p>
+</section>
+
+<!-- ===================== STATUS ===================== -->
+<section class="screen">
+  <span class="label" data-rise>Status</span>
+  <p class="sentence" style="margin-top:var(--s3)" data-rise>In active development. Not generally available.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>The deterministic core and the policy model are being built first, deliberately, because they are what make the rest safe to run unattended. Nothing on this page describes a feature you can buy today.</p>
+</section>
+
+</main>
+
+<!-- ===================== CONTACT ===================== -->
+<section class="screen" id="contact">
+  <p class="statement wide" data-rise>Tell me how follow-up actually works at your business.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>Specifically, what is eating the time. That is more useful than a feature request, and it is how the next part of this gets built.</p>
+  <a class="mail" href="mailto:sarab@singhdynamics.com?subject=Singh%20AR" data-rise>sarab@singhdynamics.com</a>
+</section>
+
+<footer class="shell foot">
+  <div class="foot-in">
+    <span>Singh AR, a Singh Dynamics product. Novi, Michigan.</span>
+    <span class="foot-fam">
+      <a class="link" href="https://singhdynamics.com/">Singh Dynamics</a>
+      <a class="link" href="https://sales.singhdynamics.com/">Websites</a>
+      <a class="link" href="https://websiteqc.singhdynamics.com/">Website QC</a>
+    </span>
+  </div>
+</footer>
+
+<script src="motion.js" defer></script>
+</body>
+</html>
