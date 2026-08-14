@@ -192,6 +192,79 @@ a { color: inherit; text-decoration: none; }
 
 .rule { border: 0; border-top: 1px solid var(--rule); margin: 0; }
 
+/* --- Family switcher -----------------------------------------------------
+   A panel for moving between the four sites without going back to the hub.
+
+   Built on <details>, deliberately. It opens, closes, takes focus and
+   responds to Enter and Space with no JavaScript at all. motion.js only adds
+   Escape-to-close and click-outside-to-close, which are conveniences rather
+   than requirements. This is the only overlay in the system, and it is the
+   one place all four colours appear together. */
+
+.switch { position: relative; }
+.switch > summary {
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem;
+  font-family: var(--font-ui); font-size: var(--t-micro); font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  transition: color .2s var(--ease);
+}
+.switch > summary::-webkit-details-marker { display: none; }
+.switch > summary::marker { content: ""; }
+.switch > summary:hover { color: var(--own); }
+.switch > summary .glyph { display: grid; gap: 3px; }
+.switch > summary .glyph i { display: block; width: 15px; height: 1px; background: currentColor; }
+.switch[open] > summary { color: var(--own); }
+
+.switch .scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: color-mix(in srgb, var(--ink) 34%, transparent);
+  animation: scrim-in .35s var(--ease-out) forwards;
+}
+
+.sheet {
+  position: fixed; z-index: 41; inset: 0 0 0 auto;
+  width: min(400px, 88vw); height: 100%;
+  background: var(--canvas); border-left: 1px solid var(--rule);
+  padding: clamp(1.6rem, 4vw, 2.6rem);
+  display: flex; flex-direction: column; gap: var(--s4);
+  overflow-y: auto; text-align: left;
+  animation: sheet-in .42s var(--ease-out) forwards;
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.sheet-close {
+  appearance: none; background: none; border: 0; cursor: pointer; padding: .4rem;
+  color: var(--muted); font-family: var(--font-ui); font-size: 1.2rem; line-height: 1;
+}
+.sheet-close:hover { color: var(--own); }
+
+.sheet-list { display: grid; gap: 0; margin-top: var(--s2); }
+.sheet-list a {
+  display: grid; gap: .3rem;
+  padding: 1.05rem 0; border-top: 1px solid var(--rule);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 60;
+  font-size: clamp(1.35rem, 4vw, 1.85rem); letter-spacing: -.02em; line-height: 1.05;
+  color: var(--sc, var(--ink));
+  transition: padding-left .3s var(--ease-out);
+}
+.sheet-list a:hover, .sheet-list a:focus-visible { padding-left: .6rem; }
+.sheet-list a span {
+  font-family: var(--font-ui); font-size: var(--t-micro); font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.sheet-list a.here { color: var(--sc, var(--ink)); }
+.sheet-list a.here span::after { content: " · you are here"; }
+
+.sheet-foot { margin-top: auto; padding-top: var(--s4); border-top: 1px solid var(--rule); display: grid; gap: .5rem; }
+.sheet-foot a { color: var(--own); font-family: var(--font-ui); font-size: var(--t-small); }
+
+@keyframes sheet-in { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .switch .scrim { animation: none; }
+  .sheet-list a { transition: none; }
+}
+
 /* --- Chrome. Minimal, and identical in weight across the family. --------- */
 
 .bar {
@@ -202,6 +275,7 @@ a { color: inherit; text-decoration: none; }
 }
 .bar > :last-child { justify-self: end; }
 .bar .mid { justify-self: center; }
+.bar-end { display: inline-flex; align-items: center; gap: clamp(.9rem, 2vw, 1.6rem); }
 @media (max-width: 700px) {
   .bar { grid-template-columns: 1fr auto; }
   .bar .mid { display: none; }
