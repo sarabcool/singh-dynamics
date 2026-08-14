@@ -32,8 +32,12 @@ jobs:
             domain: websiteqc.singhdynamics.com
     steps:
       - uses: actions/checkout@v4
-      - name: Copy shared brand CSS into deploy folder
-        run: cp site/_shared/brand.css "${{ matrix.dir }}/brand.css"
+      - name: Copy shared brand assets into deploy folder
+        run: |
+          cp site/_shared/brand.css "${{ matrix.dir }}/brand.css"
+          cp site/_shared/motion.js "${{ matrix.dir }}/motion.js"
+          mkdir -p "${{ matrix.dir }}/fonts"
+          cp site/_shared/fonts/*.woff2 "${{ matrix.dir }}/fonts/"
       - name: Render the og:image cards
         run: npm install --no-save playwright && npx playwright install --with-deps chromium && node tools/make-og-images.mjs
       - name: Deploy ${{ matrix.domain }} (${{ matrix.dir }}) to Cloudflare Pages
