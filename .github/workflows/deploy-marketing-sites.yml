@@ -36,6 +36,7 @@ jobs:
         run: |
           cp site/_shared/brand.css "${{ matrix.dir }}/brand.css"
           cp site/_shared/motion.js "${{ matrix.dir }}/motion.js"
+          cp site/_shared/_headers "${{ matrix.dir }}/_headers"
           mkdir -p "${{ matrix.dir }}/fonts"
           cp site/_shared/fonts/*.woff2 "${{ matrix.dir }}/fonts/"
       - name: Render the og:image cards
