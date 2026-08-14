@@ -31,6 +31,40 @@
     revealTargets.forEach(function (el) { io.observe(el); });
   }
 
+  /* --- Family switcher conveniences --------------------------------------
+     The panel is a <details>, so it already opens, closes and takes keyboard
+     input on its own. This only adds Escape and click-outside, plus locking
+     the page behind it. Nothing here is required for it to work. */
+
+  var sw = document.querySelector('details.switch');
+
+  if (sw) {
+    var body = document.body;
+
+    sw.addEventListener('toggle', function () {
+      body.style.overflow = sw.open ? 'hidden' : '';
+      if (sw.open) {
+        var first = sw.querySelector('.sheet-list a');
+        if (first) first.focus();
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && sw.open) {
+        sw.open = false;
+        var summary = sw.querySelector('summary');
+        if (summary) summary.focus();
+      }
+    });
+
+    sw.addEventListener('click', function (e) {
+      if (e.target.classList.contains('scrim') || e.target.closest('.sheet-close')) {
+        e.preventDefault();
+        sw.open = false;
+      }
+    });
+  }
+
   /* --- Scroll-linked progress -------------------------------------------
      Any element with [data-progress] gets --p set from 0 to 1 as it crosses
      the viewport. Read once per frame, only while something is on screen. */
