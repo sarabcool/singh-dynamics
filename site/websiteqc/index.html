@@ -3,27 +3,220 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Website QC | A structural reviewer for AI-generated websites</title>
-<meta name="description" content="Website QC reviews the code and the rendered output of AI-generated websites, finds the defects the generator leaves behind, and explains why each one matters.">
+<title>Website QC | Structural review for AI-generated sites</title>
+<meta name="description" content="A structural review for websites an AI builder generated. It reads the code and the rendered page and reports the defects the generator left behind. Currently a manual review service.">
 <link rel="canonical" href="https://websiteqc.singhdynamics.com/">
-<meta name="theme-color" content="#F4F2ED">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%235237B8'/%3E%3Cpath d='M23 11H13.2v4.2H20' stroke='%23F4F2ED' stroke-width='3.6' fill='none' opacity='.42'/%3E%3Cpath d='M23 21h-9.8' stroke='%23F4F2ED' stroke-width='3.6'/%3E%3Cpath d='M20 15.2h3' stroke='%23F4F2ED' stroke-width='3.6'/%3E%3C/svg%3E">
-<meta property="og:title" content="Website QC"><meta property="og:description" content="Find the bugs your AI builder left behind."><meta property="og:type" content="website"><meta property="og:url" content="https://websiteqc.singhdynamics.com/"><meta property="og:image" content="https://websiteqc.singhdynamics.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="brand.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Website QC","applicationCategory":"DeveloperApplication","description":"Structural and generator-artifact reviewer for AI-generated websites.","url":"https://websiteqc.singhdynamics.com/","publisher":{"@type":"Organization","name":"Singh Dynamics","url":"https://singhdynamics.com/"}}</script>
+<meta name="theme-color" content="#EDECF1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z' fill='%235B34E8'/%3E%3Cpath d='M23 11H13.2v4.2H20' stroke='%23EDECF1' stroke-width='3.6' fill='none' opacity='.42'/%3E%3Cpath d='M23 21h-9.8' stroke='%23EDECF1' stroke-width='3.6'/%3E%3C/svg%3E">
+
+<meta property="og:title" content="Website QC">
+<meta property="og:description" content="Generation is not judgment.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://websiteqc.singhdynamics.com/">
+<meta property="og:image" content="https://websiteqc.singhdynamics.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="brand.css">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Service","name":"Website QC",
+"description":"Structural integrity and generator-artifact review for AI-generated websites.",
+"url":"https://websiteqc.singhdynamics.com/",
+"provider":{"@type":"Organization","name":"Singh Dynamics","url":"https://singhdynamics.com/"}}
+</script>
+
 <style>
-:root { --accent: #5237B8; --accent-soft: #EFEAF8; --flag: #C2410C; }
-.top{padding:1.5rem 0}.top-in{display:flex;align-items:center;justify-content:space-between;gap:1rem}.parent{display:block;font-size:var(--t-micro);color:var(--muted);margin-top:1px}.parent a:hover{color:var(--accent)}
-.hero{padding:clamp(2.5rem,6vw,4rem) 0 clamp(2rem,4vw,3rem)}.hero h1{font-size:clamp(2.2rem,5.2vw,3.7rem);letter-spacing:-.035em;max-width:18ch}.hero p{margin-top:var(--s3);max-width:52ch}
-.demo{padding-bottom:clamp(3rem,7vw,5rem)}.demo-grid{display:grid;gap:var(--s3)}.panel{border:1px solid var(--rule);background:var(--paper);padding:1.1rem;position:relative}.panel>figcaption{display:flex;align-items:baseline;gap:.6rem;margin-bottom:.9rem}.panel .step-k{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--muted)}.panel .step-t{font-family:var(--font-display);font-weight:600;font-size:.96rem;letter-spacing:-.015em}.panel.after{border-color:var(--accent)}.panel.after .step-t{color:var(--accent)}.mk{display:grid;gap:6px;align-content:start}.mk i{display:block;background:var(--rule);height:15px}.mk .six{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.mk .six i{height:34px}.state-before .mk i{background:#D6D2C6}.state-review .mk .six i{outline:1.5px dashed var(--flag);outline-offset:2px;background:#D6D2C6}.flagrow{display:flex;gap:.5rem;align-items:center;margin-top:.8rem;font-family:var(--font-mono);font-size:var(--t-micro);color:var(--flag)}.flagrow::before{content:"";width:8px;height:8px;background:var(--flag);flex:none}.state-after .mk .lead{height:44px;background:var(--accent)}.state-after .mk .two{display:grid;grid-template-columns:1.6fr 1fr;gap:6px}.state-after .mk .two i{height:26px}.state-after .mk .thin{height:9px;width:62%}.state-after .mk .endbar{height:13px;background:#C9C4B6}
-.band{padding:clamp(3rem,7vw,5rem) 0}.band-ink{background:var(--ink);color:var(--canvas)}.h-lead{font-size:clamp(1.7rem,3.6vw,2.5rem);letter-spacing:-.03em;max-width:22ch}.finds{margin-top:var(--s4);border-top:1px solid var(--rule)}.find{display:grid;gap:.5rem;padding:var(--s3) 0;border-bottom:1px solid var(--rule)}.find-k{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--accent);letter-spacing:.04em}.find h3{font-size:1.06rem}.find p{color:var(--ink-2);max-width:62ch}.find .ev{font-family:var(--font-mono);font-size:var(--t-small);color:var(--muted);background:var(--accent-soft);padding:.5rem .7rem;display:inline-block}.stage{display:grid;gap:var(--s4);margin-top:var(--s4)}.stage section{padding-top:1rem;border-top:3px solid var(--accent)}.stage section.next{border-top-color:var(--rule)}.stage h3{font-size:1.05rem}.stage .when{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--accent)}.stage .next .when{color:var(--muted)}.stage p{margin-top:.5rem;color:var(--ink-2)}.band-ink .stage p{color:rgba(244,242,237,.72)}.band-ink h2,.band-ink h3{color:var(--canvas)}.band-ink .stage section{border-top-color:#9A87E2}.band-ink .stage section.next{border-top-color:rgba(244,242,237,.28)}.band-ink .stage .when{color:#9A87E2}.band-ink .stage .next .when{color:rgba(244,242,237,.5)}.ev-list{margin-top:var(--s3);display:grid;gap:0;max-width:70ch}.evsplit{display:grid;gap:var(--s3)}.ev-list div{display:grid;gap:.25rem;padding:.9rem 0;border-top:1px solid var(--rule-soft)}.ev-list .n{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--muted)}.finish{padding:clamp(3rem,7vw,5rem) 0;border-top:1px solid var(--rule)}.finish h2{font-size:clamp(1.7rem,3.6vw,2.4rem);max-width:22ch;letter-spacing:-.03em}.finish p{margin-top:var(--s2);max-width:52ch;color:var(--ink-2)}
-@media(min-width:800px){.demo-grid{grid-template-columns:repeat(3,1fr)}.finds{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--s4)}.stage{grid-template-columns:1fr 1fr;gap:var(--s5)}}@media(min-width:900px){.evsplit{grid-template-columns:16rem 1fr;gap:var(--s5);align-items:start}}
-</style></head><body>
-<header class="top"><div class="shell top-in"><span class="lockup"><svg width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Website QC mark"><path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#5237B8"/><path d="M23 11H13.2v4.2H20" stroke="#F4F2ED" stroke-width="3.6" fill="none" opacity=".42"/><path d="M23 21h-9.8" stroke="#F4F2ED" stroke-width="3.6"/><path d="M20 15.2h3" stroke="#F4F2ED" stroke-width="3.6"/></svg><span><span class="lockup-name">Website QC</span><span class="parent"><a href="https://singhdynamics.com/">Singh Dynamics</a></span></span></span><a class="link" href="#send">Send a repo</a></div></header>
-<main><section class="hero"><div class="shell rise"><h1>Your Bolt or Lovable build shipped with bugs neither of you can see.</h1><p class="lede">Website QC reads the code and the rendered page, finds the specific defects these generators leave behind, and explains why each one matters. It is closer to a linter with visual awareness than to a design opinion.</p></div></section>
-<section class="demo"><div class="shell"><div class="demo-grid"><figure class="panel state-before"><figcaption><span class="step-k">01</span><span class="step-t">What was generated</span></figcaption><div class="mk" aria-hidden="true"><i style="height:22px"></i><i class="thin" style="height:9px;width:70%"></i><div class="six"><i></i><i></i><i></i><i></i><i></i><i></i></div><i style="height:9px;width:45%"></i></div><p class="small muted" style="margin-top:.9rem">Six identical blocks, because there were six things to say. Nothing on the page is more important than anything else.</p></figure><figure class="panel state-review"><figcaption><span class="step-k">02</span><span class="step-t">What the review marks</span></figcaption><div class="mk" aria-hidden="true"><i style="height:22px"></i><i class="thin" style="height:9px;width:70%"></i><div class="six"><i></i><i></i><i></i><i></i><i></i><i></i></div><i style="height:9px;width:45%"></i></div><p class="flagrow">repetition &middot; no focal point</p><p class="small muted" style="margin-top:.55rem">Each finding names a specific element and a checkable cause, not a general impression.</p></figure><figure class="panel state-after"><figcaption><span class="step-k">03</span><span class="step-t">What it should be</span></figcaption><div class="mk" aria-hidden="true"><i style="height:22px"></i><i class="thin" style="height:9px;width:70%"></i><i class="lead"></i><div class="two"><i></i><i></i></div><i class="endbar"></i></div><p class="small muted" style="margin-top:.9rem">One thing leads, the rest support it, and the page ends where it should. Same content, different weight.</p></figure></div></div></section>
-<section class="band"><div class="shell"><h2 class="h-lead">What it actually finds</h2><p class="lede" style="margin-top:var(--s2);max-width:56ch">These are defect classes traced back to how the generators work, which is why they recur across unrelated projects rather than appearing once.</p><div class="finds"><article class="find"><span class="find-k">dead framework class</span><h3>Styles that never compile</h3><p>Tailwind classes assembled from template literals at runtime. The compiler never sees the string, so the style silently does not exist, and the hover state you wrote has never once fired.</p><span class="ev">hover:border-${color}</span></article><article class="find"><span class="find-k">fragile external asset</span><h3>Images hot-linked out of your control</h3><p>Logos and photos served from an unrelated or abandoned repository rather than your own project. One deletion by someone else and your live site has a broken image where the logo was.</p></article><article class="find"><span class="find-k">copy and behaviour mismatch</span><h3>Two buttons, one handler</h3><p>A primary and a secondary action labelled differently but wired to the same destination, so a new visitor clicking "get started" lands on a sign-in form asking for credentials they do not have yet.</p></article><article class="find"><span class="find-k">missing structure</span><h3>Pages that just stop</h3><p>No footer, or a section the rest of the codebase already assumes exists, left out by an incomplete generation pass and never noticed because the page still renders.</p></article><article class="find"><span class="find-k">dead or duplicate component</span><h3>The wrong file wins</h3><p>A leftover component from an earlier attempt still resolving ahead of the one you actually edited, which is why your change appeared to do nothing.</p></article><article class="find"><span class="find-k">uncontrolled failure</span><h3>No plan for when something breaks</h3><p>An external image with no error handling, degrading to the browser's default broken icon in front of a customer instead of something you chose.</p></article></div></div></section>
-<section class="band band-ink"><div class="shell"><h2 class="h-lead">Where this honestly stands</h2><div class="stage"><section><span class="when">now</span><h3>A manual review, done by hand</h3><p>Send a repository or a live URL and it gets reviewed properly. Two validation passes are complete against real public repositories: one on Lovable-family output, one on a Bolt.new project, both finding checkable defects and producing patches that built and type-checked clean with no regressions.</p></section><section class="next"><span class="when">not built yet</span><h3>A reviewer that opens pull requests</h3><p>The intended shape is a system that watches a repository and proposes small, specific patches a maintainer would actually merge. That is the direction, not the current state, and nothing on this page should be read as saying it exists today.</p></section></div></div></section>
-<section class="band"><div class="shell evsplit"><h2 class="h-lead">What has actually been tested</h2><div><div class="ev-list" style="margin-top:0"><div><span class="n">pass 01</span><span>Three real public repositories, cloned, installed, run and patched in place. Six patches, all built and type-checked clean, zero regressions against before and after screenshots.</span></div><div><span class="n">pass 02</span><span>A separate falsification pass against Bolt.new output specifically, to check the defect classes were not just an artifact of one generator.</span></div><div><span class="n">restraint</span><span>Two candidate issues were investigated and deliberately not patched, because the reasoning was not strong enough to justify a diff. That count matters as much as the fixes.</span></div></div><p class="small muted" style="margin-top:var(--s3);max-width:60ch">No aggregate metrics are published here because none would be honest yet. There is no "sites analysed" number, and there will not be one until it means something.</p></div></div></section></main>
-<section class="finish" id="send"><div class="shell"><h2>Send the repo, or just the live URL.</h2><p>Tell me what generated it and what you already suspect is wrong. The review is manual right now.</p><p style="margin-top:var(--s3)"><a class="btn" href="mailto:sarab@singhdynamics.com?subject=Website%20QC">Email sarab@singhdynamics.com</a></p></div></section><footer class="foot"><div class="shell foot-in"><span>© 2026 Singh Dynamics</span><span class="foot-fam"><a href="https://singhdynamics.com/">Singh Dynamics</a><a href="https://sales.singhdynamics.com/">Website Sales</a><a href="https://singhar.singhdynamics.com/">Singh AR</a></span></div></footer>
-</body></html>
+/* ==========================================================================
+   websiteqc.singhdynamics.com. Owns violet. The one site where the page
+   performs the product: six identical blocks that sort themselves out as you
+   scroll. Driven entirely by --p, and resolved when JS is off, so the point
+   survives without animation.
+   ========================================================================== */
+
+:root { --own: #5B34E8; --canvas: #EDECF1; }
+
+.demo { --pp: var(--p, 1); width: min(880px, 88vw); }
+.blocks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; text-align: left; }
+@media (min-width: 720px) { .blocks { grid-template-columns: repeat(3, 1fr); } }
+
+.blk { border: 1px solid var(--rule); padding: 14px; display: grid; gap: 8px; align-content: start; }
+.blk .bh { height: 9px; background: var(--ink); opacity: .72; width: 68%; }
+.blk .bl { height: 5px; background: var(--ink); opacity: .2; }
+.blk .bl.s { width: 60%; }
+.blk .tagx { font-family: var(--font-ui); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+/* One block becomes the one that matters. */
+.blk.lead {
+  grid-column: 1 / -1;
+  background: color-mix(in srgb, var(--own) calc(var(--pp) * 100%), transparent);
+  border-color: color-mix(in srgb, var(--own) calc(var(--pp) * 100%), var(--rule));
+  padding: calc(14px + (var(--pp) * 20px));
+}
+.blk.lead .bh { height: calc(9px + (var(--pp) * 24px)); width: calc(68% - (var(--pp) * 10%)); background: color-mix(in srgb, #FFFFFF calc(var(--pp) * 100%), var(--ink)); opacity: 1; }
+.blk.lead .bl { background: color-mix(in srgb, #FFFFFF calc(var(--pp) * 100%), var(--ink)); }
+.blk.lead .tagx { color: color-mix(in srgb, #FFFFFF calc(var(--pp) * 100%), var(--muted)); }
+
+/* Two of the six are the same component twice. They collapse out. */
+.blk.dupe {
+  opacity: calc(1 - var(--pp));
+  max-height: calc(120px - (var(--pp) * 120px));
+  padding-block: calc(14px - (var(--pp) * 14px));
+  overflow: hidden; border-color: transparent;
+}
+.blk.demote { opacity: calc(1 - (var(--pp) * .5)); }
+
+.readout { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 2.2rem; margin-top: var(--s4); }
+.readout span { color: var(--own); }
+
+/* --- Vocabulary ---------------------------------------------------------- */
+
+.vocab { display: grid; gap: var(--s6); }
+.vocab .v { display: grid; gap: .8rem; justify-items: center; }
+.vocab .w { font-family: var(--font-display); font-variation-settings: 'opsz' 144; font-size: clamp(2rem, 6vw, 4.4rem); letter-spacing: -.025em; color: var(--own); line-height: 1; }
+.vocab p { max-width: 46ch; color: var(--ink-2); }
+
+/* --- Now / Next ----------------------------------------------------------- */
+
+.stages { display: grid; gap: var(--s5); width: min(720px, 88vw); text-align: left; }
+.stages .row { display: grid; gap: .7rem; padding-top: var(--s3); border-top: 1px solid var(--own); }
+.stages .row.next { border-top-style: dashed; border-top-color: var(--rule); }
+.stages .k { font-family: var(--font-display); font-variation-settings: 'opsz' 90; font-size: clamp(1.5rem, 3.4vw, 2.4rem); color: var(--own); }
+.stages .row.next .k { color: var(--muted); }
+.stages p { color: var(--ink-2); max-width: 56ch; }
+
+.mail {
+  margin-top: var(--s5);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 60;
+  font-size: clamp(1.15rem, 3.2vw, 2.2rem); letter-spacing: -.015em; color: var(--own);
+  background-image: linear-gradient(var(--own), var(--own));
+  background-repeat: no-repeat; background-position: 0 100%; background-size: 100% 1px;
+  padding-bottom: .1em; display: inline-block;
+}
+.mail:hover { background-size: 0% 1px; }
+</style>
+</head>
+<body>
+
+<header class="shell bar">
+  <a class="lockup" href="https://singhdynamics.com/">
+    <svg width="20" height="20" viewBox="0 0 32 32" role="img" aria-label="Singh Dynamics mark">
+      <path d="M4 4h13a11 11 0 0 1 11 11v2a11 11 0 0 1-11 11H4z" fill="#5B34E8"/>
+      <path d="M23 11H13.2v4.2H20" stroke="#EDECF1" stroke-width="3.6" fill="none" opacity=".42"/>
+      <path d="M23 21h-9.8" stroke="#EDECF1" stroke-width="3.6"/>
+    </svg>
+    <span class="lockup-name">Website&nbsp;QC</span>
+  </a>
+  <a class="label mid" href="https://singhdynamics.com/">A Singh Dynamics product</a>
+  <a class="label link" href="#contact">Send a repo</a>
+</header>
+
+<main>
+
+<!-- ===================== OPENING ===================== -->
+<section class="screen">
+  <h1 class="statement wide">Your AI builder finished the site.</h1>
+  <p class="sentence" style="margin-top:var(--s5); color:var(--ink-2)" data-rise style="--d:300ms">That doesn't mean the design is finished.</p>
+</section>
+
+<!-- ===================== WHAT IT IS ===================== -->
+<section class="screen">
+  <p class="sentence" data-rise>Generation is not judgment.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>Website QC reads the code and the rendered page together, then reports the specific defects the generator left behind. Dead framework classes, fragile external assets, buttons whose copy does not match their handler, missing structural sections, duplicated components. Checkable things, not taste.</p>
+</section>
+
+<!-- ===================== THE CORRECTION ===================== -->
+<section class="screen" data-progress>
+  <span class="label" style="margin-bottom:var(--s5)">Six things that all look equally important</span>
+
+  <div class="demo" role="img"
+       aria-label="Six identical blocks. As the page scrolls, one becomes dominant, two duplicates collapse away, and the rest demote, leaving a clear hierarchy.">
+    <div class="blocks" aria-hidden="true">
+      <div class="blk lead"><span class="tagx">Section</span><i class="bh"></i><i class="bl"></i><i class="bl s"></i></div>
+      <div class="blk demote"><span class="tagx">Section</span><i class="bh"></i><i class="bl"></i><i class="bl s"></i></div>
+      <div class="blk demote"><span class="tagx">Section</span><i class="bh"></i><i class="bl"></i><i class="bl s"></i></div>
+      <div class="blk dupe"><span class="tagx">Section</span><i class="bh"></i><i class="bl"></i><i class="bl s"></i></div>
+      <div class="blk demote"><span class="tagx">Section</span><i class="bh"></i><i class="bl"></i><i class="bl s"></i></div>
+      <div class="blk dupe"><span class="tagx">Section</span><i class="bh"></i><i class="bl"></i><i class="bl s"></i></div>
+    </div>
+
+    <div class="readout label">
+      <span>Repetition detected</span>
+      <span>Hierarchy applied</span>
+      <span>Duplicates removed</span>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:var(--s5)">That is the product in one gesture. A generator will happily produce six sections of identical weight, two of which are the same component pasted twice, because nothing in it is asking what the page is for.</p>
+</section>
+
+<!-- ===================== VOCABULARY ===================== -->
+<section class="pad shell-n">
+  <div class="vocab">
+    <div class="v" data-rise>
+      <span class="w">Repetition</span>
+      <p>The same block, six times, at the same visual weight. Common in generated output because each section is produced independently and nothing reconciles them at the end.</p>
+    </div>
+    <div class="v" data-rise>
+      <span class="w">Redundancy</span>
+      <p>Components that exist twice, framework classes referenced by nothing, imports for code that was deleted three prompts ago. Dead weight a reader has to step over.</p>
+    </div>
+    <div class="v" data-rise>
+      <span class="w">Defaults</span>
+      <p>Template assumptions nobody chose. Placeholder copy that shipped, a pricing section on a site with no pricing, hero images pointed at a CDN that will not be there next year.</p>
+    </div>
+    <div class="v" data-rise>
+      <span class="w">Mismatch</span>
+      <p>A button that says one thing and does another. A form with no failure state. The gap between what the interface promises and what the code behind it handles.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== NOW / NEXT ===================== -->
+<section class="screen">
+  <span class="label" style="margin-bottom:var(--s5)">Where this actually is</span>
+  <div class="stages">
+    <div class="row" data-rise>
+      <span class="k">Now</span>
+      <p><b style="font-weight:500">Manual structural review.</b> You send a repository or a URL. It gets read by hand, with tooling, and you get back a written report of specific defects with the reasoning for each. This is a service, delivered by a person. It is what exists today.</p>
+    </div>
+    <div class="row next" data-rise>
+      <span class="k">Next</span>
+      <p><b style="font-weight:500">Repository-aware reviewer.</b> The direction is a reviewer that reads the repo itself and proposes small, verifiable patches as pull requests. That does not exist yet. It is not sold, not scheduled, and nothing above depends on it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EVIDENCE ===================== -->
+<section class="screen">
+  <span class="label" data-rise>Evidence</span>
+  <p class="sentence" style="margin-top:var(--s3)" data-rise>Tested against real repositories, not demos.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>Two validation passes are done, against public repositories built with real AI builders: Lovable family output in the first, a Bolt.new project in the second. Both were cloned, installed, run locally and patched in place rather than reviewed from a screenshot.</p>
+  <p class="note" style="margin-top:var(--s3)" data-rise>To be exact about the limits: the evidence so far is one snapshot per repository, and auth-gated internal screens were not reviewed. Continuous monitoring is not something this has demonstrated, so it is not claimed.</p>
+</section>
+
+</main>
+
+<!-- ===================== CONTACT ===================== -->
+<section class="screen" id="contact">
+  <p class="statement" data-rise>Send the repo. Get the defects.</p>
+  <p class="note" style="margin-top:var(--s4)" data-rise>A public repository or a live URL is enough to start. You get back specifics, with the reasoning, in writing.</p>
+  <a class="mail" href="mailto:sarab@singhdynamics.com?subject=Website%20QC%20review" data-rise>sarab@singhdynamics.com</a>
+</section>
+
+<footer class="shell foot">
+  <div class="foot-in">
+    <span>Website QC, a Singh Dynamics product. Novi, Michigan.</span>
+    <span class="foot-fam">
+      <a class="link" href="https://singhdynamics.com/">Singh Dynamics</a>
+      <a class="link" href="https://sales.singhdynamics.com/">Websites</a>
+      <a class="link" href="https://singhar.singhdynamics.com/">Singh AR</a>
+    </span>
+  </div>
+</footer>
+
+<script src="motion.js" defer></script>
+</body>
+</html>
