@@ -1,0 +1,74 @@
+name: weekly-auto-leads
+
+# One pipeline, once a week:
+# Places -> qualify -> best-effort contact research -> plain Excel -> email Sarab.
+# Auto repair only for now. No prospect mail and no preview generation.
+on:
+  schedule:
+    - cron: '0 12 * * 0' # Sunday morning in Michigan (08:00 EDT / 07:00 EST)
+  workflow_dispatch:
+    inputs:
+      include_backlog:
+        description: 'Include older qualified leads in the Excel (useful for the first manual run)'
+        type: boolean
+        default: false
+      max_searches:
+        description: 'Hard ceiling on Google Places searches; 64 covers all 8 core towns x 8 auto terms'
+        default: '64'
+
+concurrency:
+  group: weekly-auto-leads
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-email-leads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OFFER_ID: metro-detroit-auto-repair
+      CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_ID:        ${{ secrets.D1_DATABASE_ID }}
+      GITHUB_RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install agent dependencies
+        working-directory: agent
+        run: npm ci --omit=dev
+
+      - name: Find auto shops with no website and a phone
+        env:
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          MAX_SEARCHES: ${{ github.event.inputs.max_searches || '64' }}
+        run: node agent/sweep.mjs
+
+      - name: Qualify independent storefront auto shops
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MAX_COST_CENTS: '100'
+        run: node agent/classify.mjs
+
+      - name: Re-check website and look for an email
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MAX_LEADS: '12'
+          MAX_COST_CENTS: '75'
+          INCLUDE_BACKLOG: ${{ github.event.inputs.include_backlog || 'false' }}
+        run: node agent/research-weekly-leads.mjs
+
+      - name: Create plain Excel and email it
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          OPERATOR_TO: ${{ secrets.OPERATOR_TO }}
+          INCLUDE_BACKLOG: ${{ github.event.inputs.include_backlog || 'false' }}
+        run: node agent/export-weekly-leads.mjs
