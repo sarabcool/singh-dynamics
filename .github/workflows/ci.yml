@@ -27,8 +27,31 @@ jobs:
           node --check agent/sweep.mjs
           node --check agent/classify.mjs
           node --check agent/discover.mjs
+          node --check agent/research-weekly-leads.mjs
+          node --check agent/export-weekly-leads.mjs
           node --check agent/inquiry-received.mjs
           node --check agent/email-received.mjs
           node --check agent/execute-approved.mjs
           node --check tools/bootstrap-inbound.mjs
           node --check infra/worker/index.js
+      - name: Smoke-test weekly Excel export
+        run: |
+          node agent/export-weekly-leads.mjs --dry-run
+          python3 - <<'PY'
+          import glob, zipfile
+          files = glob.glob('artifacts/weekly-auto-shop-leads-*.xlsx')
+          assert len(files) == 1, files
+          with zipfile.ZipFile(files[0]) as z:
+              assert z.testzip() is None
+              names = set(z.namelist())
+              required = {
+                  '[Content_Types].xml',
+                  '_rels/.rels',
+                  'xl/workbook.xml',
+                  'xl/_rels/workbook.xml.rels',
+                  'xl/styles.xml',
+                  'xl/worksheets/sheet1.xml',
+              }
+              assert required <= names
+          print('weekly xlsx smoke test passed')
+          PY
