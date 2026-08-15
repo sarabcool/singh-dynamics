@@ -23,7 +23,7 @@ export const MAIL_FROM =
   process.env.MAIL_FROM || 'Singh Dynamics <sarab@singhdynamics.com>';
 
 export const OPERATOR_TO =
-  process.env.OPERATOR_TO || 'khalsasarab3@gmail.com';
+  process.env.OPERATOR_TO || 'sarab@singhdynamics.com';
 
 // CAN-SPAM requires a valid physical postal address in every commercial email.
 // A PO box is fine and is the sane choice here, for reasons that should be
