@@ -1,9 +1,8 @@
 /**
  * Weekly contact research for newly qualified auto-shop leads.
  *
- * This does exactly one thing: re-check that a lead still has no functioning
- * website and try to find a public business email. It never builds previews
- * and never contacts prospects.
+ * Re-check that a lead still has no functioning owned website and try to find
+ * a public business email. Never builds previews and never contacts prospects.
  */
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { d1, assertD1Env, logRun } from './lib/d1.mjs';
@@ -48,11 +47,46 @@ ${offerContext()}
 
 Research only. Never contact anyone. Never invent facts.
 The lead already passed Google Places checks for no website and a listed phone number.
-Your job is to re-check whether a functioning owned website exists and, if possible,
-find a public business email address from a reliable public source.
+Re-check whether a functioning owned website exists and, if possible, find a public
+business email address from a reliable public source.
 A Facebook, Instagram, Yelp or other directory/social page is NOT a functioning owned website.
 If a field cannot be verified, return null.
 `.trim();
+
+const nullableString = { anyOf: [{ type: 'string' }, { type: 'null' }] };
+const nullableNumber = { anyOf: [{ type: 'number' }, { type: 'null' }] };
+const OUTPUT_SCHEMA = {
+  type: 'object',
+  properties: {
+    still_operating: { type: 'boolean' },
+    website: nullableString,
+    email: nullableString,
+    phone: nullableString,
+    facebook_url: nullableString,
+    address_street: nullableString,
+    address_zip: nullableString,
+    score: nullableNumber,
+    score_reason: nullableString,
+  },
+  required: [
+    'still_operating', 'website', 'email', 'phone', 'facebook_url',
+    'address_street', 'address_zip', 'score', 'score_reason',
+  ],
+  additionalProperties: false,
+};
+
+function parseFallbackJson(raw) {
+  const cleaned = String(raw || '')
+    .replace(/```(?:json)?/gi, '')
+    .replace(/```/g, '')
+    .trim();
+  if (!cleaned) return null;
+  try { return JSON.parse(cleaned); } catch {}
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start < 0 || end <= start) return null;
+  try { return JSON.parse(cleaned.slice(start, end + 1)); } catch { return null; }
+}
 
 let costCents = 0;
 let researched = 0;
@@ -61,29 +95,30 @@ let websitesFound = 0;
 let failures = 0;
 
 for (const lead of leads) {
-  if (costCents >= MAX_COST_CENTS) {
+  const remainingCents = MAX_COST_CENTS - costCents;
+  if (remainingCents < 5) {
     console.log('research cost ceiling reached');
     break;
   }
 
-  const prompt = `Research this business and return ONLY JSON, no code fence.\n` +
+  const prompt = `Research this business. Use public web sources and return the requested structured result.\n` +
     `name: ${lead.name}\ncity: ${lead.city}, ${lead.state}\n` +
     `type: ${lead.primary_type ?? 'unknown'}\nmaps: ${lead.maps_url ?? 'unknown'}\n` +
-    `phone: ${lead.phone}\nreviews: ${lead.review_count ?? 'unknown'}\n` +
-    `Return exactly: {"still_operating":boolean,"website":string|null,"email":string|null,` +
-    `"phone":string|null,"facebook_url":string|null,"address_street":string|null,` +
-    `"address_zip":string|null,"score":number|null,"score_reason":string|null}`;
+    `phone: ${lead.phone}\nreviews: ${lead.review_count ?? 'unknown'}`;
 
   let raw = '';
+  let structured = null;
   try {
     for await (const msg of query({
       prompt,
       options: {
-        model: 'claude-sonnet-5',
+        model: 'claude-haiku-4-5',
         systemPrompt: SYSTEM,
         allowedTools: ['WebSearch', 'WebFetch'],
         permissionMode: 'bypassPermissions',
-        maxTurns: 10,
+        maxTurns: 6,
+        maxBudgetUsd: Math.min(0.20, remainingCents / 100),
+        outputFormat: { type: 'json_schema', schema: OUTPUT_SCHEMA },
       },
     })) {
       if (msg.type === 'assistant') {
@@ -91,7 +126,13 @@ for (const lead of leads) {
           if (block.type === 'text') raw += block.text;
         }
       }
-      if (msg.type === 'result') costCents += Math.round((msg.total_cost_usd ?? 0) * 100);
+      if (msg.type === 'result') {
+        costCents += Math.round((msg.total_cost_usd ?? 0) * 100);
+        if (msg.structured_output && typeof msg.structured_output === 'object') {
+          structured = msg.structured_output;
+        }
+        if (typeof msg.result === 'string') raw += `\n${msg.result}`;
+      }
     }
   } catch (err) {
     failures++;
@@ -99,17 +140,17 @@ for (const lead of leads) {
     continue;
   }
 
-  let data;
-  try {
-    data = JSON.parse(raw.replace(/^```(?:json)?|```$/gm, '').trim());
-  } catch {
+  const data = structured ?? parseFallbackJson(raw);
+  if (!data || typeof data !== 'object') {
     failures++;
-    console.error(`[${lead.slug}] unparseable research response`);
+    console.error(`[${lead.slug}] no structured research result`);
     continue;
   }
 
   const website = typeof data.website === 'string' && data.website.trim() ? data.website.trim() : null;
-  const email = typeof data.email === 'string' && data.email.trim() ? data.email.trim().toLowerCase() : null;
+  const email = typeof data.email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())
+    ? data.email.trim().toLowerCase()
+    : null;
   const closed = data.still_operating === false;
   const disqualified = Boolean(website || closed);
   const disqualifyReason = website
