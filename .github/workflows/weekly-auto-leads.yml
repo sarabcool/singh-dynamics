@@ -15,9 +15,6 @@ on:
       max_searches:
         description: 'Hard ceiling on Google Places searches; 64 covers all 8 core towns x 8 auto terms'
         default: '64'
-  push:
-    paths:
-      - '.github/weekly-auto-leads.trigger'
 
 concurrency:
   group: weekly-auto-leads
