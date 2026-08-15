@@ -42,6 +42,8 @@ const NAME_REJECT = new RegExp([
 ].join('|'), 'i');
 
 const HAS_STREET_NUMBER = /^\s*\d+[A-Za-z]?\s+\S/;
+const PLACES_SKU = 'Places API Text Search Enterprise';
+const PLACES_FREE_MONTHLY_EVENTS = 1000;
 
 function parseAddress(formatted) {
   const parts = (formatted ?? '').split(',').map((s) => s.trim());
@@ -137,14 +139,14 @@ outer: for (const town of towns) {
   }
 }
 
-const costCents = Math.round(searches * 3.2);
 const rejectSummary = [...rejects.entries()].sort((a,b) => b[1]-a[1]).map(([r,n]) => `${r}: ${n}`).join(', ');
+const billingSummary = `${PLACES_SKU}; ${searches} request(s); current free cap ${PLACES_FREE_MONTHLY_EVENTS} events/SKU/month; actual Google charge not estimated`;
 if (!DRY) await d1(`INSERT INTO runs (job, trigger, finished_at, ok, items_in, items_out, cost_cents, gh_run_url, summary, error)
   VALUES ('places-sweep', ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?)`, [
   process.env.GITHUB_EVENT_NAME || 'manual', failed === 0 ? 1 : 0, seen, inserted,
-  costCents, process.env.GITHUB_RUN_URL || null,
-  `offer=${OFFER.id}; ${searches} searches, ${seen} seen, ${inserted} new; rejected: ${rejectSummary || 'none'}`,
+  null, process.env.GITHUB_RUN_URL || null,
+  `offer=${OFFER.id}; ${searches} searches, ${seen} seen, ${inserted} new; ${billingSummary}; rejected: ${rejectSummary || 'none'}`,
   failed ? `${failed} row(s) failed to insert` : null,
 ]);
-console.log(`done. ${searches} searches, ${seen} results, ${inserted} new leads, ~$${(costCents/100).toFixed(2)}`);
+console.log(`done. ${searches} searches, ${seen} results, ${inserted} new leads. Google Places: ${billingSummary}.`);
 if (failed) process.exitCode = 1;
