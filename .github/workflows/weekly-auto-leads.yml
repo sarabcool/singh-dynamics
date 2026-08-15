@@ -4,9 +4,6 @@ name: weekly-auto-leads
 # Places -> qualify -> best-effort contact research -> plain Excel -> email Sarab.
 # Auto repair only for now. No prospect mail and no preview generation.
 on:
-  push:
-    paths:
-      - '.github/weekly-auto-leads.trigger'
   schedule:
     - cron: '0 12 * * 0' # Sunday morning in Michigan (08:00 EDT / 07:00 EST)
   workflow_dispatch:
