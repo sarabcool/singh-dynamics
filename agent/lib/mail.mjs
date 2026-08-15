@@ -31,7 +31,7 @@ export const OPERATOR_TO =
 export const POSTAL_ADDRESS =
   process.env.POSTAL_ADDRESS || 'Singh Dynamics, Novi, MI 48375';
 
-async function send({ to, subject, html, replyTo, headers = {} }) {
+async function send({ to, subject, html, replyTo, headers = {}, attachments = [] }) {
   if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not set');
 
   const res = await fetch('https://api.resend.com/emails', {
@@ -47,6 +47,7 @@ async function send({ to, subject, html, replyTo, headers = {} }) {
       html,
       ...(replyTo ? { reply_to: replyTo } : {}),
       ...(Object.keys(headers).length ? { headers } : {}),
+      ...(attachments.length ? { attachments } : {}),
     }),
   });
 
@@ -55,8 +56,8 @@ async function send({ to, subject, html, replyTo, headers = {} }) {
   return body.id;
 }
 
-export function sendOperator({ subject, html, to = OPERATOR_TO }) {
-  return send({ to, subject, html });
+export function sendOperator({ subject, html, to = OPERATOR_TO, attachments = [] }) {
+  return send({ to, subject, html, attachments });
 }
 
 export function sendProspect({ to, subject, html, unsubscribeUrl, replyTo }) {
