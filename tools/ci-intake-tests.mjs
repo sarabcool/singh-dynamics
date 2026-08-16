@@ -8,16 +8,24 @@
 //   node tools/ci-intake-tests.mjs --local
 
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 
 if (process.env.CI !== 'true' && !process.argv.includes('--local')) process.exit(0);
 
-const worker = readFileSync('infra/worker/index.js', 'utf8');
-const sales = readFileSync('site/sales/index.html', 'utf8');
-const deploy = readFileSync('.github/workflows/deploy-marketing-sites.yml', 'utf8');
-const executor = readFileSync('agent/execute-approved.mjs', 'utf8');
-const mail = readFileSync('agent/lib/mail.mjs', 'utf8');
-const inquiry = readFileSync('agent/inquiry-received.mjs', 'utf8');
+// Resolve from this file, not the working directory. agent/package.json runs
+// this on postinstall with cwd=agent/, so cwd-relative paths break in CI while
+// passing locally, which is exactly how this file failed its first CI run.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = (rel) => readFileSync(path.join(root, rel), 'utf8');
+
+const worker = read('infra/worker/index.js');
+const sales = read('site/sales/index.html');
+const deploy = read('.github/workflows/deploy-marketing-sites.yml');
+const executor = read('agent/execute-approved.mjs');
+const mail = read('agent/lib/mail.mjs');
+const inquiry = read('agent/inquiry-received.mjs');
 
 let passed = 0;
 function test(name, fn) {
