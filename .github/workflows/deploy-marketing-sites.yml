@@ -16,6 +16,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     strategy:
+      # Without this, GitHub's default fail-fast cancels the other legs when one
+      # site fails, leaving some domains updated and others not. A partial
+      # marketing-site deploy is worse than a failed one, because nothing says so.
+      fail-fast: false
       matrix:
         include:
           - dir: site/root
@@ -39,6 +43,30 @@ jobs:
           cp site/_shared/_headers "${{ matrix.dir }}/_headers"
           mkdir -p "${{ matrix.dir }}/fonts"
           cp site/_shared/fonts/*.woff2 "${{ matrix.dir }}/fonts/"
+      - name: Point the intake form at the Worker
+        env:
+          WORKER_URL: ${{ vars.WORKER_URL }}
+        run: |
+          # The sales page ships with a placeholder host. If WORKER_URL is not
+          # set as a repo variable the placeholder survives, and the form's
+          # inline script hides itself and leaves the mailto fallback visible.
+          # A visibly-absent form beats a button that fails for every visitor.
+          if [ -z "$WORKER_URL" ]; then
+            echo "::warning::WORKER_URL is not set; the intake form will stay hidden on this deploy"
+            exit 0
+          fi
+          host="${WORKER_URL#https://}"
+          host="${host#http://}"
+          host="${host%/}"
+          for f in "${{ matrix.dir }}"/*.html; do
+            [ -e "$f" ] || continue
+            sed -i "s|REPLACE_WITH_WORKER_HOST|${host}|g" "$f"
+          done
+          if grep -rq "REPLACE_WITH_WORKER_HOST" "${{ matrix.dir }}"; then
+            echo "::error::placeholder host survived substitution in ${{ matrix.dir }}"
+            exit 1
+          fi
+
       - name: Render the og:image cards
         run: npm install --no-save playwright && npx playwright install --with-deps chromium && node tools/make-og-images.mjs
       - name: Deploy ${{ matrix.domain }} (${{ matrix.dir }}) to Cloudflare Pages

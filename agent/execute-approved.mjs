@@ -82,7 +82,7 @@ if (claimed.length === 0) {
 }
 
 console.log(`claimed ${claimed.length} of ${ids.length} requested`);
-let sent = 0, skipped = 0, failed = 0;
+let sent = 0, skipped = 0, failed = 0, humanActions = 0, released = 0;
 
 for (const row of claimed) {
   try {
@@ -91,6 +91,17 @@ for (const row of claimed) {
           `SELECT id, slug, name, email, phone, city, opted_out, status
              FROM leads WHERE id = ?`, [row.lead_id])
       : null;
+
+    // A call script is a human action. Approving one means "yes, make this
+    // call", not "send something". It used to be marked failed with
+    // "no executor", which turned the whole workflow run red for a phone lead
+    // behaving exactly as designed.
+    if (row.action_type === 'outreach_call_script') {
+      await finish(row.id, 'executed', null);
+      console.log(`  #${row.id} -> executed: call script approved, no send (human action)`);
+      humanActions++;
+      continue;
+    }
 
     if (row.action_type !== 'outreach_email') {
       await finish(row.id, 'failed', `no executor for action_type '${row.action_type}'`);
@@ -137,6 +148,7 @@ for (const row of claimed) {
         replyTo,
         inReplyTo: body.in_reply_to,
         references: body.references,
+        idempotencyKey: `approval-${row.id}`,
       });
     } else {
       await sendProspect({
@@ -145,6 +157,9 @@ for (const row of claimed) {
         html: body.html,
         replyTo,
         unsubscribeUrl: unsubscribeUrlFor(lead.id),
+        // Stable per queue row, so a retry of this exact approved action cannot
+        // become a second email to the same stranger.
+        idempotencyKey: `approval-${row.id}`,
       });
     }
 
@@ -158,6 +173,20 @@ for (const row of claimed) {
     console.log(`sent #${row.id} to ${lead.name} <${to}>`);
     await new Promise((r) => setTimeout(r, 600));
   } catch (e) {
+    // A rate limit or a 5xx from Resend used to be fatal: the claim had already
+    // stamped executed_at, and the claim query requires executed_at IS NULL, so
+    // the row could never be picked up again and re-approving did nothing.
+    // Release it instead and let the next run retry. The idempotency key above
+    // is what makes that safe.
+    if (e?.transient) {
+      await d1(
+        `UPDATE approval_queue SET executed_at = NULL, error = ? WHERE id = ?`,
+        [`released for retry: ${String(e.message || e).slice(0, 400)}`, row.id]
+      );
+      console.error(`#${row.id} transient failure, released for retry: ${e.message}`);
+      released++;
+      continue;
+    }
     console.error(`#${row.id} failed: ${e.message}`);
     await finish(row.id, 'failed', String(e.message || e).slice(0, 500));
     failed++;
@@ -169,7 +198,7 @@ async function finish(id, status, error) {
   if (error) console.log(`  #${id} -> ${status}: ${error}`);
 }
 
-const summary = `${sent} sent, ${skipped} skipped, ${failed} failed`;
+const summary = `${sent} sent, ${skipped} skipped, ${humanActions} human action(s), ${released} released for retry, ${failed} failed`;
 console.log(`\n${summary}`);
 await logRun({
   job: 'execute-approved',

@@ -119,6 +119,34 @@
   padding-bottom: .1em; display: inline-block;
 }
 .mail:hover { background-size: 0% 1px; }
+
+/* --- Start form ----------------------------------------------------------- */
+/* The reader is a shop owner on a phone. Four fields, one button, no account,
+   no scheduling widget. Everything optional except the shop name and one way
+   to reach them. */
+
+.start-form { margin-top: var(--s5); width: min(520px, 88vw); text-align: left; display: grid; gap: var(--s3); }
+.start-form label { display: grid; gap: .35rem; font-family: var(--font-ui); font-size: var(--t-small); color: var(--ink-2); }
+.start-form input,
+.start-form textarea {
+  font: inherit; font-family: var(--font-ui); font-size: 1rem; color: var(--ink);
+  background: transparent; border: 0; border-bottom: 1px solid var(--rule);
+  padding: .55rem 0; border-radius: 0; -webkit-appearance: none; appearance: none;
+}
+.start-form textarea { resize: vertical; min-height: 3.5rem; }
+.start-form input:focus,
+.start-form textarea:focus { outline: none; border-bottom-color: var(--own); }
+.start-form .req { color: var(--own); }
+.start-form .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.start-form button {
+  justify-self: start; margin-top: var(--s3); font-family: var(--font-ui); font-size: 1rem;
+  color: var(--canvas); background: var(--own); border: 0; border-radius: 2px;
+  padding: .8rem 1.6rem; cursor: pointer; min-height: 44px;
+}
+.start-form button:disabled { opacity: .55; cursor: default; }
+.form-msg { font-family: var(--font-ui); font-size: var(--t-small); margin-top: var(--s3); min-height: 1.4em; }
+.form-msg[data-state="error"] { color: var(--own); }
+.form-alt { margin-top: var(--s4); font-family: var(--font-ui); font-size: var(--t-small); color: var(--muted); }
 </style>
 </head>
 <body>
@@ -271,8 +299,102 @@
 <section class="screen" id="start">
   <p class="statement" data-rise>Tell us the name of your shop.</p>
   <p class="note" style="margin-top:var(--s4)" data-rise>The business name and the town. That is all we need to start building.</p>
-  <a class="mail" href="mailto:sarab@singhdynamics.com?subject=Website%20for%20my%20business" data-rise>sarab@singhdynamics.com</a>
+
+  <form class="start-form" id="start-form" novalidate data-rise
+        data-endpoint="https://REPLACE_WITH_WORKER_HOST/intake">
+    <label>Shop name <span class="req" aria-hidden="true">required</span>
+      <input name="shop_name" type="text" maxlength="120" required autocomplete="organization">
+    </label>
+    <label>Your name
+      <input name="contact_name" type="text" maxlength="120" autocomplete="name">
+    </label>
+    <label>Email
+      <input name="email" type="email" maxlength="254" autocomplete="email" inputmode="email">
+    </label>
+    <label>Phone
+      <input name="phone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel">
+    </label>
+    <label>Town
+      <input name="city" type="text" maxlength="100" autocomplete="address-level2">
+    </label>
+    <label>Anything else
+      <textarea name="notes" maxlength="1000" rows="2"></textarea>
+    </label>
+
+    <!-- Honeypot. The Worker treats any filled value here as a bot and returns
+         202 without writing a row. Hidden off-canvas rather than display:none
+         because some bots skip undisplayed fields. -->
+    <div class="trap" aria-hidden="true">
+      <label>Company website<input name="company_website" type="text" tabindex="-1" autocomplete="off"></label>
+    </div>
+
+    <button type="submit">Send it</button>
+    <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+  </form>
+
+  <p class="form-alt" data-rise>Or just email
+    <a class="link" href="mailto:sarab@singhdynamics.com?subject=Website%20for%20my%20business">sarab@singhdynamics.com</a>.
+  </p>
 </section>
+
+<script>
+(function () {
+  var form = document.getElementById('start-form');
+  var msg = document.getElementById('form-msg');
+  var button = form.querySelector('button');
+  var endpoint = form.dataset.endpoint;
+
+  // If the deploy step did not substitute a real Worker host, do not pretend to
+  // work. Falling back to the mailto is better than a button that silently
+  // fails for every visitor.
+  if (!endpoint || endpoint.indexOf('REPLACE_WITH_WORKER_HOST') > -1) {
+    form.hidden = true;
+    return;
+  }
+
+  function say(text, state) {
+    msg.textContent = text;
+    if (state) { msg.setAttribute('data-state', state); } else { msg.removeAttribute('data-state'); }
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    var data = {};
+    new FormData(form).forEach(function (value, key) { data[key] = String(value).trim(); });
+
+    if (!data.shop_name) { say('What is the shop called?', 'error'); return; }
+    if (!data.email && !data.phone) { say('Leave an email or a phone number so we can reach you.', 'error'); return; }
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      say('That email address does not look right.', 'error');
+      return;
+    }
+
+    button.disabled = true;
+    say('Sending...');
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function (res) {
+      if (res.ok) {
+        form.reset();
+        say('Got it. Sarab will get back to you, usually the same day.');
+        button.disabled = false;
+        return;
+      }
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        say(body.error ? body.error : 'That did not go through. Email sarab@singhdynamics.com and it will get sorted.', 'error');
+        button.disabled = false;
+      });
+    }).catch(function () {
+      say('That did not go through. Email sarab@singhdynamics.com and it will get sorted.', 'error');
+      button.disabled = false;
+    });
+  });
+})();
+</script>
 
 <footer class="shell foot">
   <div class="foot-in">

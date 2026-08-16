@@ -1,7 +1,14 @@
 const JSON_HEADERS = { 'content-type': 'application/json' };
+// Every origin that is allowed to POST /intake. The sales site was missing from
+// this list, which meant a form on sales.singhdynamics.com would have been 403'd
+// by handleIntake before it ever reached the database. Subdomains are separate
+// origins; there is no wildcard here on purpose.
 const PUBLIC_ORIGINS = new Set([
   'https://singhdynamics.com',
   'https://www.singhdynamics.com',
+  'https://sales.singhdynamics.com',
+  'https://singhar.singhdynamics.com',
+  'https://websiteqc.singhdynamics.com',
 ]);
 
 export default {
@@ -114,13 +121,63 @@ async function handleIntake(request, env) {
   if (!email && !phone) return json({ ok: false, error: 'email or phone is required' }, { status: 400, headers: cors });
   if (!validEmail(email)) return json({ ok: false, error: 'invalid email' }, { status: 400, headers: cors });
 
+  // Rate limit. Every accepted POST fires a GitHub repository_dispatch, so an
+  // unthrottled endpoint is a way to burn Actions minutes from a browser.
+  const ipHash = await hashIp(request, env);
+  const limited = await overIntakeLimit(env, ipHash);
+  if (limited) {
+    // 202, not 429. A real shop owner who double-taps submit should not see an
+    // error, and a bot learns nothing from the response either way.
+    console.log(`intake throttled: ${limited}`);
+    return json({ ok: true }, { status: 202, headers: cors });
+  }
+
   await env.DB.prepare(
-    `INSERT INTO inquiries (shop_name, contact_name, email, phone, city, notes, source)
-     VALUES (?, ?, ?, ?, ?, ?, 'singhdynamics.com')`
-  ).bind(shopName, contactName, email, phone, city, notes).run();
+    `INSERT INTO inquiries (shop_name, contact_name, email, phone, city, notes, source, ip_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(shopName, contactName, email, phone, city, notes, originLabel(request), ipHash).run();
 
   await dispatch(env, 'inquiry-received', { reason: 'website-intake' });
   return json({ ok: true }, { status: 201, headers: cors });
+}
+
+function originLabel(request) {
+  const origin = request.headers.get('origin') || '';
+  return origin.replace(/^https?:\/\//, '') || 'singhdynamics.com';
+}
+
+/**
+ * Salted hash of the caller's IP. See migration 010 for why this is a hash and
+ * not the address. Returns null when there is no secret to salt with, in which
+ * case the per-IP limit is skipped and only the global limit applies.
+ */
+async function hashIp(request, env) {
+  const ip = request.headers.get('cf-connecting-ip') || '';
+  const salt = env.OPERATOR_TOKEN || '';
+  if (!ip || !salt) return null;
+  const bytes = new TextEncoder().encode(`intake:v1:${salt}:${ip}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+}
+
+const INTAKE_PER_IP_PER_HOUR = 5;
+const INTAKE_GLOBAL_PER_HOUR = 60;
+
+async function overIntakeLimit(env, ipHash) {
+  if (ipHash) {
+    const perIp = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM inquiries
+        WHERE ip_hash = ? AND created_at > datetime('now','-1 hour')`
+    ).bind(ipHash).first();
+    if ((perIp?.n || 0) >= INTAKE_PER_IP_PER_HOUR) return `ip ${ipHash.slice(0, 8)} over hourly limit`;
+  }
+
+  const global = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM inquiries WHERE created_at > datetime('now','-1 hour')`
+  ).first();
+  if ((global?.n || 0) >= INTAKE_GLOBAL_PER_HOUR) return 'global hourly intake limit reached';
+
+  return null;
 }
 
 async function handleResendWebhook(request, env) {
@@ -139,6 +196,15 @@ async function handleResendWebhook(request, env) {
 
   let event;
   try { event = JSON.parse(raw); } catch { return new Response('invalid json', { status: 400 }); }
+
+  // Bounces and complaints used to be acknowledged with 200 and thrown away.
+  // That is the failure mode that degrades quietly: we keep mailing dead
+  // addresses, a spam complaint never suppresses anything, and the sending
+  // domain's reputation erodes over weeks with nothing in any log to explain it.
+  if (event.type === 'email.bounced' || event.type === 'email.complained') {
+    return handleDeliveryFailure(event, env);
+  }
+
   if (event.type !== 'email.received') return json({ ok: true, ignored: event.type || 'unknown' });
 
   const data = event.data || {};
@@ -167,6 +233,55 @@ async function handleResendWebhook(request, env) {
   }
 
   return json({ ok: true });
+}
+
+/**
+ * A hard bounce or a spam complaint is a permanent do-not-contact signal.
+ *
+ * Deliberately narrow: only a Permanent bounce suppresses. A transient bounce is
+ * a full mailbox or a greylist, and suppressing on those would throw away good
+ * leads for a problem that fixes itself. A complaint always suppresses, and is
+ * the stronger signal of the two: someone pressed "this is spam".
+ */
+async function handleDeliveryFailure(event, env) {
+  const data = event.data || {};
+  const complaint = event.type === 'email.complained';
+  const bounceType = String(data.bounce?.type || '').toLowerCase();
+
+  if (!complaint && bounceType && bounceType !== 'permanent') {
+    return json({ ok: true, ignored: `${event.type}:${bounceType}` });
+  }
+
+  const recipients = (Array.isArray(data.to) ? data.to : [data.to])
+    .map((value) => String(value || '').toLowerCase().trim())
+    .filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+
+  if (!recipients.length) return json({ ok: true, ignored: `${event.type}:no-recipient` });
+
+  const reason = complaint
+    ? 'spam complaint reported via Resend'
+    : `hard bounce reported via Resend${data.bounce?.subType ? ` (${data.bounce.subType})` : ''}`;
+
+  let suppressed = 0;
+  for (const email of recipients) {
+    // INSERT OR IGNORE: Resend retries webhooks, and `suppression.email` is
+    // UNIQUE, so a redelivery must not 500.
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO suppression (email, reason) VALUES (?, ?)`
+    ).bind(email, reason).run();
+
+    // Opt the lead out too. `suppression` is the gate every send checks, but a
+    // lead left at opted_out=0 still shows up in the operator's queues and
+    // reports as contactable, which is misleading.
+    await env.DB.prepare(
+      `UPDATE leads SET opted_out=1, opted_out_at=datetime('now')
+        WHERE lower(email)=? AND opted_out=0`
+    ).bind(email).run();
+
+    suppressed++;
+  }
+
+  return json({ ok: true, event: event.type, suppressed });
 }
 
 async function verifySvix({ raw, id, timestamp, signature, secret }) {
@@ -378,8 +493,40 @@ async function handleApproval(request, env) {
   if (!['approved', 'rejected'].includes(decision)) return new Response('bad decision', { status: 400 });
   if (!Array.isArray(ids) || ids.length === 0) return new Response('no ids', { status: 400 });
   const placeholders = ids.map(() => '?').join(',');
-  await env.DB.prepare(`UPDATE approval_queue SET status=?, decided_at=datetime('now'), decided_note=? WHERE id IN (${placeholders}) AND status='pending'`)
-    .bind(decision, note || null, ...ids).run();
-  if (decision === 'approved') await dispatch(env, 'execute-approved', { ids });
-  return json({ updated: ids.length, decision });
+
+  // Approving an expired item used to report success and then do nothing:
+  // execute-approved.mjs requires expires_at > now, so it claimed zero rows and
+  // exited clean while the operator was told the send was on its way. Expiry is
+  // now settled here, and the response says which ids actually moved.
+  const moved = await env.DB.prepare(
+    `UPDATE approval_queue SET status=?, decided_at=datetime('now'), decided_note=?
+      WHERE id IN (${placeholders}) AND status='pending' AND expires_at > datetime('now')
+      RETURNING id`
+  ).bind(decision, note || null, ...ids).all();
+
+  const updatedIds = (moved.results || []).map((r) => r.id);
+
+  // Anything left pending in this batch was past its expiry. Mark it so it stops
+  // sitting in the digest's pending list forever.
+  const expired = await env.DB.prepare(
+    `UPDATE approval_queue SET status='expired', decided_at=datetime('now'),
+            decided_note='expired before a decision was recorded'
+      WHERE id IN (${placeholders}) AND status='pending'
+      RETURNING id`
+  ).bind(...ids).all();
+
+  const expiredIds = (expired.results || []).map((r) => r.id);
+
+  if (decision === 'approved' && updatedIds.length) {
+    await dispatch(env, 'execute-approved', { ids: updatedIds });
+  }
+
+  return json({
+    updated: updatedIds.length,
+    decision,
+    ...(expiredIds.length ? { expired: expiredIds } : {}),
+    ...(ids.length !== updatedIds.length + expiredIds.length
+      ? { not_pending: ids.filter((id) => !updatedIds.includes(id) && !expiredIds.includes(id)) }
+      : {}),
+  });
 }
