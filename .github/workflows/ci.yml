@@ -25,6 +25,8 @@ jobs:
       - name: Syntax check
         run: |
           node --check agent/sweep.mjs
+          node --check agent/lib/territory.mjs
+          node --check agent/config/territories.mjs
           node --check agent/classify.mjs
           node --check agent/discover.mjs
           node --check agent/research-weekly-leads.mjs
@@ -34,6 +36,16 @@ jobs:
           node --check agent/execute-approved.mjs
           node --check tools/bootstrap-inbound.mjs
           node --check infra/worker/index.js
+          node --check tools/ci-lead-tests.mjs
+          node --check tools/ci-intake-tests.mjs
+      - name: Lead pipeline unit tests
+        run: node tools/ci-lead-tests.mjs --local
+      - name: Intake and customer-flow tests
+        run: node tools/ci-intake-tests.mjs --local
+      - name: Sweep planner dry run
+        env:
+          OFFER_ID: metro-detroit-auto-repair
+        run: node agent/sweep.mjs --dry-run --territories 2
       - name: Smoke-test weekly Excel export
         run: |
           node agent/export-weekly-leads.mjs --dry-run

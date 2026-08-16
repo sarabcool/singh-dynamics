@@ -13,7 +13,7 @@ const rows = await d1(
   [MAX_INQUIRIES]
 );
 
-let queued = 0;
+let queued = 0, duplicates = 0;
 let linked = 0;
 let failed = 0;
 
@@ -47,6 +47,24 @@ for (const inquiry of rows) {
     }
 
     linked++;
+
+    // Do not stack drafts on the same lead. publish-previews.mjs already does
+    // this check; inquiry-received did not, so a lead that had a queued preview
+    // email and then filled in the form got two drafts, and approving both
+    // mailed the same person twice.
+    const existing = await d1(
+      `SELECT id FROM approval_queue
+        WHERE lead_id = ? AND action_type IN ('outreach_email','outreach_call_script')
+          AND status IN ('pending','approved','executed')
+        LIMIT 1`,
+      [lead.id]
+    );
+    if (existing.length) {
+      await d1(`UPDATE inquiries SET status = 'reviewed' WHERE id = ? AND status = 'new'`, [inquiry.id]);
+      console.log(`inquiry ${inquiry.id}: lead ${lead.id} already has a queued or sent outreach item, skipping`);
+      duplicates++;
+      continue;
+    }
 
     if (inquiry.email) {
       const first = inquiry.contact_name ? ` ${escapeText(inquiry.contact_name.split(/\s+/)[0])}` : '';
@@ -95,7 +113,7 @@ await logRun({
   ok: failed === 0 ? 1 : 0,
   itemsIn: rows.length,
   itemsOut: queued,
-  summary: `${linked} linked to leads, ${queued} approval action(s) queued`,
+  summary: `${linked} linked to leads, ${queued} approval action(s) queued, ${duplicates} skipped as duplicate`,
   error: failed ? `${failed} inquiry(s) failed` : null,
 });
 

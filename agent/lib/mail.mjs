@@ -31,36 +31,92 @@ export const OPERATOR_TO =
 export const POSTAL_ADDRESS =
   process.env.POSTAL_ADDRESS || 'Singh Dynamics, Novi, MI 48375';
 
-async function send({ to, subject, html, replyTo, headers = {}, attachments = [] }) {
+/**
+ * Marks an error as worth retrying rather than fatal. `execute-approved.mjs`
+ * reads this to decide whether to release the queue row back to `approved` (so
+ * a later run picks it up) or bury it as `failed`.
+ */
+export class TransientMailError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'TransientMailError';
+    this.transient = true;
+  }
+}
+
+const RETRY_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS = 3;
+
+async function send({ to, subject, html, replyTo, headers = {}, attachments = [], idempotencyKey }) {
   if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not set');
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: MAIL_FROM,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-      ...(replyTo ? { reply_to: replyTo } : {}),
-      ...(Object.keys(headers).length ? { headers } : {}),
-      ...(attachments.length ? { attachments } : {}),
-    }),
+  const payload = JSON.stringify({
+    from: MAIL_FROM,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html,
+    ...(replyTo ? { reply_to: replyTo } : {}),
+    ...(Object.keys(headers).length ? { headers } : {}),
+    ...(attachments.length ? { attachments } : {}),
   });
 
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`resend ${res.status}: ${JSON.stringify(body)}`);
-  return body.id;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res;
+    try {
+      res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${RESEND_API_KEY}`,
+          'content-type': 'application/json',
+          // Without this, a fetch that times out after Resend accepted the
+          // message would be retried as a fresh send and a stranger gets the
+          // same cold email twice. The key is derived from the queue row, so
+          // every retry of one approved action carries the same value.
+          ...(idempotencyKey ? { 'Idempotency-Key': String(idempotencyKey) } : {}),
+        },
+        body: payload,
+      });
+    } catch (err) {
+      // Network-level failure. We cannot know whether Resend received it, which
+      // is exactly why the idempotency key above is not optional in practice.
+      lastError = new TransientMailError(`resend network error: ${err.message}`);
+      if (attempt < MAX_ATTEMPTS) { await backoff(attempt); continue; }
+      throw lastError;
+    }
+
+    const body = await res.json().catch(() => ({}));
+    if (res.ok) return body.id;
+
+    const detail = `resend ${res.status}: ${JSON.stringify(body)}`;
+    if (RETRY_STATUSES.has(res.status)) {
+      lastError = new TransientMailError(detail);
+      if (attempt < MAX_ATTEMPTS) { await backoff(attempt, res.headers.get('retry-after')); continue; }
+      throw lastError;
+    }
+
+    // 4xx that is not rate limiting is a real problem with the request. Retrying
+    // it just burns quota and delays the operator finding out.
+    throw new Error(detail);
+  }
+
+  throw lastError ?? new Error('resend send failed');
 }
 
-export function sendOperator({ subject, html, to = OPERATOR_TO, attachments = [] }) {
-  return send({ to, subject, html, attachments });
+function backoff(attempt, retryAfter) {
+  const headerSeconds = Number(retryAfter);
+  const ms = Number.isFinite(headerSeconds) && headerSeconds > 0
+    ? Math.min(headerSeconds * 1000, 30_000)
+    : Math.min(500 * 2 ** (attempt - 1), 8_000);
+  return new Promise((r) => setTimeout(r, ms));
 }
 
-export function sendProspect({ to, subject, html, unsubscribeUrl, replyTo }) {
+export function sendOperator({ subject, html, to = OPERATOR_TO, attachments = [], idempotencyKey }) {
+  return send({ to, subject, html, attachments, idempotencyKey });
+}
+
+export function sendProspect({ to, subject, html, unsubscribeUrl, replyTo, idempotencyKey }) {
   if (!unsubscribeUrl) {
     throw new Error('refusing to send prospect mail with no unsubscribe URL');
   }
@@ -78,6 +134,7 @@ export function sendProspect({ to, subject, html, unsubscribeUrl, replyTo }) {
     subject,
     html: html + footer,
     replyTo,
+    idempotencyKey,
     // One-click unsubscribe. Gmail and Yahoo require this on bulk senders, and
     // honouring it is cheaper than the deliverability hit of not doing so.
     headers: {
@@ -87,7 +144,7 @@ export function sendProspect({ to, subject, html, unsubscribeUrl, replyTo }) {
   });
 }
 
-export function sendInboundReply({ to, subject, html, replyTo, inReplyTo, references }) {
+export function sendInboundReply({ to, subject, html, replyTo, inReplyTo, references, idempotencyKey }) {
   const headers = {};
   const messageId = safeHeaderValue(inReplyTo);
   const refs = safeHeaderValue(references);
@@ -96,7 +153,7 @@ export function sendInboundReply({ to, subject, html, replyTo, inReplyTo, refere
   const referenceChain = [refs, messageId].filter(Boolean).join(' ');
   if (referenceChain) headers.References = referenceChain;
 
-  return send({ to, subject, html, replyTo, headers });
+  return send({ to, subject, html, replyTo, headers, idempotencyKey });
 }
 
 function safeHeaderValue(value) {

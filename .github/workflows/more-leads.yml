@@ -1,27 +1,36 @@
-name: weekly-auto-leads
+name: more-leads
 
-# One pipeline, once a week:
-# Places -> qualify -> best-effort contact research -> plain Excel -> email Sarab.
-# Auto repair only for now. No prospect mail and no preview generation.
+# On-demand version of the Sunday pipeline, for when the week's leads are used
+# up before the week is. Manual only: there is no schedule here on purpose, so
+# this can never double the Google Places bill by running on its own.
+#
+# It advances into the next territory the rotation has not worked yet rather
+# than re-searching towns the weekly job already exhausted. Qualification rules
+# are identical to the weekly run. Nothing is sent to a prospect: the only email
+# this workflow produces is the internal Excel report to the operator inbox.
 on:
-  schedule:
-    - cron: '0 12 * * 0' # Sunday morning in Michigan (08:00 EDT / 07:00 EST)
   workflow_dispatch:
     inputs:
-      include_backlog:
-        description: 'Include older qualified leads in the Excel (useful for the first manual run)'
-        type: boolean
-        default: false
+      territories:
+        description: 'How many territories to work in this run (1-3). Each is roughly 40-70 Places requests.'
+        default: '1'
+      territory:
+        description: 'Optional: force one territory key (e.g. macomb-south). Leave blank to let the rotation choose.'
+        default: ''
       max_searches:
         description: 'Hard ceiling on Google Places requests for this run'
         default: '80'
-      territories:
-        description: 'How many territories to work in this run'
-        default: '1'
+      include_backlog:
+        description: 'Include older qualified leads in the Excel, not just this run'
+        type: boolean
+        default: false
+      window_days:
+        description: 'How many days of leads the Excel covers when backlog is off'
+        default: '14'
 
 concurrency:
-  # Shared with more-leads.yml. Two concurrent sweeps would race on
-  # territory_state and pay twice for the same ground.
+  # Shares a group with the weekly job. Two sweeps at once would race on
+  # territory_state and spend twice as much for the same ground.
   group: auto-leads-pipeline
   cancel-in-progress: false
 
@@ -29,7 +38,7 @@ permissions:
   contents: read
 
 jobs:
-  build-and-email-leads:
+  more-leads:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -50,11 +59,12 @@ jobs:
         working-directory: agent
         run: npm ci --omit=dev
 
-      - name: Find auto shops with no website and a phone
+      - name: Sweep the next unused territory
         env:
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
           MAX_SEARCHES: ${{ github.event.inputs.max_searches || '80' }}
           TERRITORY_COUNT: ${{ github.event.inputs.territories || '1' }}
+          TERRITORY: ${{ github.event.inputs.territory }}
         run: node agent/sweep.mjs
 
       - name: Qualify independent storefront auto shops
@@ -71,10 +81,12 @@ jobs:
           INCLUDE_BACKLOG: ${{ github.event.inputs.include_backlog || 'false' }}
         run: node agent/research-weekly-leads.mjs
 
-      - name: Create plain Excel and email it
+      - name: Create Excel and email it to the operator inbox
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           OPERATOR_TO: ${{ secrets.OPERATOR_TO }}
           INCLUDE_BACKLOG: ${{ github.event.inputs.include_backlog || 'false' }}
+          EXPORT_WINDOW_DAYS: ${{ github.event.inputs.window_days || '14' }}
+          EXPORT_LABEL: on-demand
         run: node agent/export-weekly-leads.mjs

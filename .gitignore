@@ -11,3 +11,4 @@ sites/dist/
 # was a stray build.cpython-312.pyc.
 __pycache__/
 *.py[cod]
+artifacts/

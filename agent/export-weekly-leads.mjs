@@ -12,6 +12,11 @@ import { OFFER } from './config/offer.mjs';
 
 const INCLUDE_BACKLOG = String(process.env.INCLUDE_BACKLOG || '').toLowerCase() === 'true';
 const DRY = process.argv.includes('--dry-run');
+// How far back "this batch" reaches. The Sunday job wants 8 days. An on-demand
+// run fired two days after the last one still wants the leads it just found, so
+// the window is a parameter rather than a constant buried in the query.
+const WINDOW_DAYS = Math.min(Math.max(Number(process.env.EXPORT_WINDOW_DAYS) || 8, 1), 365);
+const LABEL = process.env.EXPORT_LABEL || 'weekly';
 
 if (OFFER.id !== 'metro-detroit-auto-repair') {
   throw new Error(`weekly export only supports metro-detroit-auto-repair; got ${OFFER.id}`);
@@ -219,13 +224,13 @@ async function main() {
     FROM leads
     WHERE vertical=? AND disqualified=0 AND website IS NULL AND phone IS NOT NULL
       AND storefront='yes' AND COALESCE(score,0) >= ?
-      ${INCLUDE_BACKLOG ? '' : "AND first_seen_at >= datetime('now','-8 days')"}
+      ${INCLUDE_BACKLOG ? '' : `AND first_seen_at >= datetime('now','-${WINDOW_DAYS} days')`}
     ORDER BY COALESCE(score,0) DESC, COALESCE(review_count,0) DESC, name`,
     [OFFER.vertical, OFFER.scoring.high]);
 
   const xlsx = buildXlsx(rows);
   const date = new Date().toISOString().slice(0, 10);
-  const filename = `weekly-auto-shop-leads-${date}.xlsx`;
+  const filename = `${LABEL}-auto-shop-leads-${date}.xlsx`;
   mkdirSync('artifacts', { recursive: true });
   writeFileSync(`artifacts/${filename}`, xlsx);
 
@@ -235,12 +240,33 @@ async function main() {
   }
 
   const emailCount = rows.filter((r) => r.email).length;
-  const html = `<p><strong>${rows.length}</strong> qualified auto-shop lead${rows.length === 1 ? '' : 's'} this week.</p>
+
+  // Where the pipeline actually looked, and where it will look next. Without
+  // this the report gives no way to tell fresh ground from a repeat sweep.
+  const territories = await d1(
+    `SELECT territory, last_swept_at, new_leads, exhausted
+       FROM territory_state WHERE offer_id=?
+      ORDER BY last_swept_at DESC LIMIT 3`,
+    [OFFER.id]
+  ).catch(() => []);
+  const nextUp = await d1(
+    `SELECT COUNT(*) AS n FROM territory_state WHERE offer_id=? AND exhausted=1`,
+    [OFFER.id]
+  ).catch(() => []);
+
+  const territoryLine = territories.length
+    ? `<p>Most recent territories: ${territories
+      .map((t) => `${t.territory}${t.exhausted ? ' (exhausted)' : ''}`)
+      .join(', ')}. ${nextUp[0]?.n ?? 0} territory/territories marked exhausted so far.</p>`
+    : '';
+
+  const html = `<p><strong>${rows.length}</strong> qualified auto-shop lead${rows.length === 1 ? '' : 's'} in this batch.</p>
 <p>${emailCount} have an email address. Every row has a phone number and Google reports no website; the research pass re-checks the highest-priority leads.</p>
+${territoryLine}
 <p>The Excel file is attached. It is intentionally a plain table.</p>`;
 
   await sendOperator({
-    subject: `Singh Dynamics: ${rows.length} weekly auto-shop leads`,
+    subject: `Singh Dynamics: ${rows.length} ${LABEL} auto-shop leads`,
     html,
     attachments: [{ filename, content: xlsx.toString('base64') }],
   });
@@ -249,7 +275,7 @@ async function main() {
     job: 'weekly-auto-leads',
     itemsIn: rows.length,
     itemsOut: rows.length,
-    summary: `emailed ${rows.length} qualified auto-shop leads; ${emailCount} with email`,
+    summary: `emailed ${rows.length} qualified auto-shop leads (${LABEL}, ${INCLUDE_BACKLOG ? 'backlog included' : `${WINDOW_DAYS}-day window`}); ${emailCount} with email`,
   });
 
   console.log(`emailed ${filename}: ${rows.length} lead(s), ${emailCount} with email`);
