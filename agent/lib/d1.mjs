@@ -68,17 +68,43 @@ export async function logRun({
   costCents = 0,
   summary = null,
   error = null,
+  // Cost accounting, kept separate on purpose. See migration 008.
+  //   claudeCostCents  Claude spend for this run.
+  //   claudeCostSource 'reported' when the API told us, 'estimated' when we
+  //                    computed it from token counts. Never conflate the two.
+  //   placesRequests   Google Places requests issued. A count. This process
+  //                    cannot see Google's actual bill, so it does not invent
+  //                    a dollar figure for it.
+  claudeCostCents = null,
+  claudeCostSource = null,
+  placesRequests = 0,
 }) {
+  const claude = claudeCostCents ?? costCents ?? 0;
   try {
     await d1(
       `INSERT INTO runs (job, trigger, finished_at, ok, items_in, items_out,
-                         cost_cents, gh_run_url, summary, error)
-       VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?)`,
-      [job, trigger, ok, itemsIn, itemsOut, costCents,
-       process.env.GITHUB_RUN_URL || null, summary, error]
+                         cost_cents, claude_cost_cents, claude_cost_source,
+                         places_requests, gh_run_url, summary, error)
+       VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [job, trigger, ok, itemsIn, itemsOut, claude, claude, claudeCostSource,
+       placesRequests, process.env.GITHUB_RUN_URL || null, summary, error]
     );
   } catch (e) {
-    // Never let the audit write take down the job it is auditing.
-    console.error(`could not write runs row: ${e.message}`);
+    // Migration 008 may not be applied yet on a given database. Falling back to
+    // the legacy column set keeps the audit trail intact instead of silently
+    // losing every runs row until someone notices.
+    try {
+      await d1(
+        `INSERT INTO runs (job, trigger, finished_at, ok, items_in, items_out,
+                           cost_cents, gh_run_url, summary, error)
+         VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?)`,
+        [job, trigger, ok, itemsIn, itemsOut, claude,
+         process.env.GITHUB_RUN_URL || null, summary, error]
+      );
+      console.error(`runs row written without cost split (apply migration 008): ${e.message}`);
+    } catch (e2) {
+      // Never let the audit write take down the job it is auditing.
+      console.error(`could not write runs row: ${e2.message}`);
+    }
   }
 }

@@ -59,6 +59,9 @@ for(let i=0;i<leads.length;i+=BATCH){
   }
 }
 const summary=`offer=${OFFER.id}; yes:${tally.yes} no:${tally.no} unclear:${tally.unclear} disqualified:${tally.disqualified}`;
-await logRun({job:'classify',ok:batchErrors===0?1:0,itemsIn:leads.length,itemsOut:classified,costCents:Math.round(costCents),summary,error:batchErrors?`${batchErrors} batch(es) failed`:null});
+// costCents here is computed from token counts against list prices, so it is
+// labelled 'estimated'. The research pass uses Claude's own reported cost and
+// labels it 'reported'. Never let a reader of `runs` confuse the two.
+await logRun({job:'classify',ok:batchErrors===0?1:0,itemsIn:leads.length,itemsOut:classified,claudeCostCents:Math.round(costCents),claudeCostSource:'estimated',summary,error:batchErrors?`${batchErrors} batch(es) failed`:null});
 console.log(`done. ${classified}/${leads.length}. ${summary}`);
 if(batchErrors)process.exit(1);
